@@ -1,0 +1,14 @@
+Act as an expert ATS (Applicant Tracking System) and Career Coach. Analyze the following resume data against the provided Job Description.
+
+Resume JSON:
+{{resumeData}}
+
+Job Description:
+{{jobDescription}}
+
+Evaluate the match and provide a JSON response with the following fields:
+1. `score`: A number from 0 to 100 representing the match percentage.
+2. `missingKeywords`: A list of important keywords or skills from the JD that are missing in the resume.
+3. `feedback`: A list of actionable suggestions to improve the resume for this specific job.
+
+Return ONLY valid JSON.

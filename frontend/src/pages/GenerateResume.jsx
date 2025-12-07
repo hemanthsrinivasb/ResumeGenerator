@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { FaBrain, FaTrash, FaPaperPlane, FaPlusCircle } from "react-icons/fa";
-import { generateResume } from "../api/ResumeService";
+import { FaBrain, FaTrash, FaPaperPlane, FaPlusCircle, FaFileDownload, FaFileUpload, FaGithub, FaMagic } from "react-icons/fa";
+import { generateResume, analyzeResume, generateCoverLetter } from "../api/ResumeService";
 import { BiBook } from "react-icons/bi";
 import { useForm, useFieldArray } from "react-hook-form";
 import Resume from "../components/Resume";
@@ -28,6 +28,7 @@ const GenerateResume = () => {
   const [showFormUI, setShowFormUI] = useState(false);
   const [showResumeUI, setShowResumeUI] = useState(false);
   const [showPromptInput, setShowPromptInput] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] = useState("modern");
 
   const experienceFields = useFieldArray({ control, name: "experience" });
   const educationFields = useFieldArray({ control, name: "education" });
@@ -45,8 +46,99 @@ const GenerateResume = () => {
     setShowResumeUI(true);
   };
 
-  const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [description, setDescription] = useState(""); const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleExport = () => {
+    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
+      JSON.stringify(data)
+    )}`;
+    const link = document.createElement("a");
+    link.href = jsonString;
+    link.download = "resume_data.json";
+    link.click();
+    toast.success("Data exported successfully!");
+  };
+
+  const handleImport = (e) => {
+    const fileReader = new FileReader();
+    if (e.target.files[0]) {
+      fileReader.readAsText(e.target.files[0], "UTF-8");
+      fileReader.onload = (event) => {
+        try {
+          const parsedData = JSON.parse(event.target.result);
+          setData(parsedData);
+          reset(parsedData);
+          toast.success("Data imported successfully!");
+        } catch (err) {
+          toast.error("Invalid JSON file");
+        }
+      };
+    }
+  };
+
+  const [githubUsername, setGithubUsername] = useState("");
+
+  const handleGithubImport = async () => {
+    if (!githubUsername) {
+      toast.error("Please enter a GitHub username");
+      return;
+    }
+    try {
+      const res = await fetch(`https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=5`);
+      if (!res.ok) throw new Error("Failed");
+      const repos = await res.json();
+      const newProjects = repos.map((repo) => ({
+        title: repo.name,
+        description: repo.description || "No description",
+        technologiesUsed: repo.language || "N/A",
+        githubLink: repo.html_url,
+      }));
+      setValue("projects", newProjects);
+      toast.success(`Imported ${repos.length} GitHub Projects!`);
+    } catch (e) {
+      toast.error("Failed to fetch GitHub projects");
+    }
+  };
+
+
+
+  const [jobDescription, setJobDescription] = useState("");
+  const [atsResult, setAtsResult] = useState(null);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [activeTab, setActiveTab] = useState("ats");
+
+  const handleATSCheck = async () => {
+    if (!jobDescription) {
+      toast.error("Please enter a Job Description");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await analyzeResume(data, jobDescription);
+      setAtsResult(res.data);
+    } catch (e) {
+      toast.error("ATS Check Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCoverLetter = async () => {
+    if (!jobDescription) {
+      toast.error("Please enter a Job Description");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await generateCoverLetter(data, jobDescription);
+      setCoverLetter(res.data?.coverLetter || "Error generating letter");
+    } catch (e) {
+      toast.error("Cover Letter Generation Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGenerate = async () => {
     console.log(description);
@@ -127,6 +219,19 @@ const GenerateResume = () => {
         <h1 className="text-4xl font-bold mb-6 flex items-center justify-center gap-2">
           <BiBook className="text-accent animate-pulse" /> Resume Form
         </h1>
+
+        <div className="flex justify-end gap-2 mb-4">
+          <button onClick={handleExport} className="btn btn-sm btn-outline btn-info gap-2">
+            <FaFileDownload /> Export JSON
+          </button>
+          <button
+            onClick={() => fileInputRef.current.click()}
+            className="btn btn-sm btn-outline btn-success gap-2"
+          >
+            <FaFileUpload /> Import JSON
+          </button>
+          <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} />
+        </div>
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="p-6 space-y-6 bg-base-200 rounded-lg text-base-content shadow-lg"
@@ -167,6 +272,25 @@ const GenerateResume = () => {
             "issuingOrganization",
             "year",
           ])}
+
+          <div className="flex items-end gap-2 mb-2 p-4 bg-base-100 rounded-lg border border-base-300">
+            <div className="form-control w-full max-w-xs">
+              <label className="label">
+                <span className="label-text font-bold flex items-center gap-2"><FaGithub /> Import Projects from GitHub</span>
+              </label>
+              <input
+                type="text"
+                placeholder="GitHub Username"
+                className="input input-bordered w-full h-10"
+                value={githubUsername}
+                onChange={(e) => setGithubUsername(e.target.value)}
+              />
+            </div>
+            <button type="button" onClick={handleGithubImport} className="btn btn-accent btn-sm h-10">
+              Fetch Projects
+            </button>
+          </div>
+
           {renderFieldArray(projectsFields, "Projects", "projects", [
             "title",
             "description",
@@ -230,8 +354,25 @@ const GenerateResume = () => {
   function showResume() {
     return (
       <div className="animate-fade-in">
-        <Resume data={data} />
-        <div className="flex mt-5 justify-center gap-2">
+        <div className="flex justify-center gap-4 mb-8 bg-base-200 p-4 rounded-xl shadow-inner">
+          <button
+            onClick={() => setSelectedTemplate('modern')}
+            className={`btn btn-sm ${selectedTemplate === 'modern' ? 'btn-primary' : 'btn-ghost'}`}>
+            Modern
+          </button>
+          <button
+            onClick={() => setSelectedTemplate('classic')}
+            className={`btn btn-sm ${selectedTemplate === 'classic' ? 'btn-primary' : 'btn-ghost'}`}>
+            Classic
+          </button>
+          <button
+            onClick={() => setSelectedTemplate('creative')}
+            className={`btn btn-sm ${selectedTemplate === 'creative' ? 'btn-primary' : 'btn-ghost'}`}>
+            Creative
+          </button>
+        </div>
+        <Resume data={data} templateId={selectedTemplate} />
+        <div className="flex mt-5 justify-center gap-2 flex-wrap">
           <div
             onClick={() => {
               setShowPromptInput(true);
@@ -252,7 +393,114 @@ const GenerateResume = () => {
           >
             Edit
           </div>
+          <button
+            onClick={() => document.getElementById("ai_modal").showModal()}
+            className="btn btn-secondary transition hover:scale-105"
+          >
+            <FaMagic /> AI Tools (ATS & Cover Letter)
+          </button>
         </div>
+
+        {/* AI Tools Modal */}
+        <dialog id="ai_modal" className="modal">
+          <div className="modal-box w-11/12 max-w-5xl">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <FaBrain className="text-primary" /> AI Career Tools
+            </h3>
+
+            <div className="flex gap-4 my-4">
+              <button
+                className={`btn ${activeTab === "ats" ? "btn-primary" : "btn-ghost"}`}
+                onClick={() => setActiveTab("ats")}
+              >
+                ATS Checker
+              </button>
+              <button
+                className={`btn ${activeTab === "cl" ? "btn-primary" : "btn-ghost"}`}
+                onClick={() => setActiveTab("cl")}
+              >
+                Cover Letter
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Job Description</span>
+                </label>
+                <textarea
+                  className="textarea textarea-bordered h-64"
+                  placeholder="Paste the Job Description here..."
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                ></textarea>
+              </div>
+
+              <div className="bg-base-200 p-4 rounded-lg overflow-y-auto h-64">
+                {activeTab === "ats" && (
+                  <div className="space-y-4">
+                    {!atsResult && <div className="text-center text-gray-500 mt-10">Run ATS Check to see results</div>}
+                    {atsResult && (
+                      <>
+                        <div className="text-center">
+                          <div
+                            className={`radial-progress ${atsResult.score > 70 ? "text-success" : "text-warning"}`}
+                            style={{ "--value": atsResult.score }}
+                            role="progressbar"
+                          >
+                            {atsResult.score}%
+                          </div>
+                          <div className="text-sm font-bold mt-2">Match Score</div>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-error">Missing Keywords</h4>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {atsResult.missingKeywords?.map((kw, i) => (
+                              <span key={i} className="badge badge-error badge-outline">
+                                {kw}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-info">Feedback</h4>
+                          <ul className="list-disc list-inside text-sm">
+                            {atsResult.feedback?.map((fb, i) => (
+                              <li key={i}>{fb}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </>
+                    )}
+                    <button className="btn btn-primary w-full mt-4" onClick={handleATSCheck} disabled={loading}>
+                      {loading ? <span className="loading loading-spinner"></span> : "Analyze Resume"}
+                    </button>
+                  </div>
+                )}
+
+                {activeTab === "cl" && (
+                  <div className="space-y-4">
+                    {!coverLetter && <div className="text-center text-gray-500 mt-10">Generate a Cover Letter</div>}
+                    {coverLetter && (
+                      <div className="whitespace-pre-wrap text-sm font-serif p-4 bg-white text-black rounded shadow">
+                        {coverLetter}
+                      </div>
+                    )}
+                    <button className="btn btn-primary w-full mt-4" onClick={handleCoverLetter} disabled={loading}>
+                      {loading ? <span className="loading loading-spinner"></span> : "Generate Cover Letter"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-action">
+              <form method="dialog">
+                <button className="btn">Close</button>
+              </form>
+            </div>
+          </div>
+        </dialog>
       </div>
     );
   }

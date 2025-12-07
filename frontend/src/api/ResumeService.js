@@ -13,3 +13,19 @@ export const generateResume = async (description) => {
 
   return response.data;
 };
+
+export const analyzeResume = async (resumeData, jobDescription) => {
+  const response = await axiosInstance.post("/api/v1/resume/analyze", {
+    resumeData,
+    jobDescription,
+  });
+  return response.data;
+};
+
+export const generateCoverLetter = async (resumeData, jobDescription) => {
+  const response = await axiosInstance.post("/api/v1/resume/cover-letter", {
+    resumeData,
+    jobDescription,
+  });
+  return response.data;
+};

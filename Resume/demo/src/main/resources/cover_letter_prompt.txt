@@ -1,0 +1,14 @@
+Act as a professional career consultant. Write a compelling and professional cover letter based on the candidate's resume and the target job description.
+
+Resume JSON:
+{{resumeData}}
+
+Job Description:
+{{jobDescription}}
+
+The cover letter should highlight relevant skills and experience from the resume that match the job description. Keep it professional, engaging, and concise (approx 300 words).
+
+Return a JSON response with a single field:
+`coverLetter`: The full text of the generated cover letter.
+
+Return ONLY valid JSON.
