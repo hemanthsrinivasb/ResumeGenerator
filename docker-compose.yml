@@ -20,9 +20,9 @@ services:
     #           count: 1
     #           capabilities: [gpu]
 
-  # ── PostgreSQL database ─────────────────────────────────────────
+  # ── PostgreSQL database (with pgvector extension) ───────────────
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: resume-postgres
     environment:
       POSTGRES_DB: resumedb
@@ -30,6 +30,7 @@ services:
       POSTGRES_PASSWORD: resume_pass
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql
     ports:
       - "5432:5432"
     healthcheck:
@@ -57,6 +58,8 @@ services:
       DB_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       JWT_SECRET: dGhpcyBpcyBhIHZlcnkgbG9uZyBzZWNyZXQga2V5IGZvciBITUFDLVNIQTI1NiBoYXNoaW5n
       JWT_EXPIRATION: 86400000
+      APP_RAG_ENABLED: "true"
+      EMBEDDING_MODEL: nomic-embed-text
     depends_on:
       postgres:
         condition: service_healthy

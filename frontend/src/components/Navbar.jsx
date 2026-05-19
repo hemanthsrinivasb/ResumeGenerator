@@ -85,12 +85,23 @@ function Navbar() {
               Contact Us
             </Link>
           </li>
+          <li>
+            <Link
+              to={"/jobs"}
+              className="hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+            >
+              Jobs
+            </Link>
+          </li>
         </ul>
       </div>
-      <div className="navbar-end">
-        <a className="btn bg-gradient-to-r from-primary to-secondary text-white hover:from-primary/90 hover:to-secondary/90 hover:scale-105 transition-all shadow-md hover:shadow-lg">
-          Login
-        </a>
+      <div className="navbar-end gap-2">
+        <Link to="/jobs" className="btn btn-ghost btn-sm hidden sm:flex gap-1">
+          🎯 Find Jobs
+        </Link>
+        <Link to="/dashboard" className="btn bg-gradient-to-r from-primary to-secondary text-white hover:from-primary/90 hover:to-secondary/90 hover:scale-105 transition-all shadow-md hover:shadow-lg btn-sm">
+          Dashboard
+        </Link>
       </div>
     </div>
   );

@@ -33,6 +33,12 @@
 			<artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
 		</dependency>
 
+		<!-- Spring AI — PGVector (RAG / vector store) -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-pgvector-store-spring-boot-starter</artifactId>
+		</dependency>
+
 		<!-- Spring Security -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

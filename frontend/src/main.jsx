@@ -13,6 +13,7 @@ import GenerateResume from "./pages/GenerateResume";
 import Login          from "./pages/Login";
 import Register       from "./pages/Register";
 import Dashboard      from "./pages/Dashboard";
+import Jobs           from "./pages/Jobs";
 
 import { isLoggedIn } from "./api/ResumeService";
 
@@ -37,6 +38,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="services" element={<Services />} />
           <Route path="contact"  element={<Contact />} />
           <Route path="generate-resume" element={<GenerateResume />} />
+          <Route path="jobs"            element={<Jobs />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useForm, useFieldArray } from "react-hook-form";
 import { FaTrash, FaPlusCircle, FaFileDownload, FaFileUpload, FaGithub, FaMagic, FaSave } from "react-icons/fa";
 import { BiBook } from "react-icons/bi";
+import { motion } from "framer-motion";
 
 import Resume from "../components/Resume";
 import PromptInput from "../components/PromptInput";
@@ -149,27 +150,33 @@ const GenerateResume = () => {
   );
 
   // ── Views ──────────────────────────────────────────────────────
+  const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
+  const fadeUp  = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+
   if (showPromptInput) {
     return (
-      <div className="mt-5 p-10 flex flex-col gap-3 items-center justify-center font-sans">
+      <motion.div
+        className="mt-5 p-10 flex flex-col gap-3 items-center justify-center font-sans"
+        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
+      >
         <PromptInput onGenerated={(resumeData) => {
           reset(resumeData);
           setData(resumeData);
           setShowPromptInput(false);
           setShowFormUI(true);
         }} />
-      </div>
+      </motion.div>
     );
   }
 
   if (showFormUI) {
     return (
-      <div className="w-full p-10 animate-fade-in">
-        <h1 className="text-4xl font-bold mb-6 flex items-center justify-center gap-2">
+      <motion.div className="w-full p-10" initial="hidden" animate="show" variants={stagger}>
+        <motion.h1 variants={fadeUp} className="text-4xl font-bold mb-6 flex items-center justify-center gap-2">
           <BiBook className="text-accent animate-pulse" /> Resume Form
-        </h1>
+        </motion.h1>
 
-        <div className="flex justify-end gap-2 mb-4 flex-wrap">
+        <motion.div variants={fadeUp} className="flex justify-end gap-2 mb-4 flex-wrap">
           <button onClick={handleExport} className="btn btn-sm btn-outline btn-info gap-1">
             <FaFileDownload /> Export JSON
           </button>
@@ -177,11 +184,11 @@ const GenerateResume = () => {
             <FaFileUpload /> Import JSON
           </button>
           <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} />
-        </div>
+        </motion.div>
 
-        <form onSubmit={handleSubmit(onSubmit)}
+        <motion.form variants={fadeUp} onSubmit={handleSubmit(onSubmit)}
           className="p-6 space-y-6 bg-base-200 rounded-lg text-base-content shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {renderInput("personalInformation.fullName", "Full Name")}
             {renderInput("personalInformation.email", "Email", "email")}
             {renderInput("personalInformation.phoneNumber", "Phone Number", "tel")}
@@ -189,9 +196,9 @@ const GenerateResume = () => {
             {renderInput("personalInformation.linkedin", "LinkedIn", "url")}
             {renderInput("personalInformation.gitHub", "GitHub", "url")}
             {renderInput("personalInformation.portfolio", "Portfolio", "url")}
-          </div>
+          </motion.div>
 
-          <h3 className="text-xl font-semibold">Summary</h3>
+          <motion.h3 variants={fadeUp} className="text-xl font-semibold">Summary</motion.h3>
           <textarea {...register("summary")}
             className="textarea textarea-bordered w-full bg-base-100 resize-none focus:ring-2 focus:ring-primary" rows={4} />
 
@@ -225,29 +232,35 @@ const GenerateResume = () => {
             <div className="flex-1">{renderFieldArray(interestsFields, "Interests", "interests", ["name"])}</div>
           </div>
 
-          <button type="submit" className="btn btn-primary w-full text-lg">Submit & Preview</button>
-        </form>
-      </div>
+          <motion.button variants={fadeUp} type="submit" className="btn btn-primary w-full text-lg">Submit & Preview</motion.button>
+        </motion.form>
+      </motion.div>
     );
   }
 
   if (showResumeUI) {
     return (
-      <div className="animate-fade-in">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
         {/* Template picker */}
-        <div className="flex justify-center gap-4 mb-8 bg-base-200 p-4 rounded-xl shadow-inner">
+        <motion.div
+          className="flex justify-center gap-4 mb-8 bg-base-200 p-4 rounded-xl shadow-inner"
+          initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+        >
           {["modern", "classic", "creative"].map((t) => (
             <button key={t} onClick={() => setSelectedTemplate(t)}
               className={`btn btn-sm capitalize ${selectedTemplate === t ? "btn-primary" : "btn-ghost"}`}>
               {t}
             </button>
           ))}
-        </div>
+        </motion.div>
 
         <Resume data={data} templateId={selectedTemplate} />
 
         {/* Action bar */}
-        <div className="flex mt-5 justify-center gap-2 flex-wrap">
+        <motion.div
+          className="flex mt-5 justify-center gap-2 flex-wrap"
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}
+        >
           <button onClick={() => { setShowPromptInput(true); setShowFormUI(false); setShowResumeUI(false); }}
             className="btn btn-accent">Generate Another</button>
           <button onClick={() => { setShowPromptInput(false); setShowFormUI(true); setShowResumeUI(false); }}
@@ -267,11 +280,11 @@ const GenerateResume = () => {
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
 
         <AtsCheckerModal resumeData={data} />
         <CoverLetterModal resumeData={data} />
-      </div>
+      </motion.div>
     );
   }
 

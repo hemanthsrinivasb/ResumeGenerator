@@ -5,6 +5,7 @@ import com.resume.backend.demo.*;
 import com.resume.backend.demo.model.ResumeHistory;
 import com.resume.backend.demo.model.User;
 import com.resume.backend.demo.repository.ResumeHistoryRepository;
+import com.resume.backend.demo.service.EmbeddingService;
 import com.resume.backend.demo.service.ResumeService;
 import com.resume.backend.demo.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,16 +37,19 @@ public class ResumeController {
     private final ResumeService resumeService;
     private final ResumeHistoryRepository historyRepository;
     private final UserService userService;
+    private final EmbeddingService embeddingService;
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ResumeController(ResumeService resumeService,
                             ResumeHistoryRepository historyRepository,
                             UserService userService,
+                            EmbeddingService embeddingService,
                             ChatClient.Builder chatClientBuilder) {
         this.resumeService = resumeService;
         this.historyRepository = historyRepository;
         this.userService = userService;
+        this.embeddingService = embeddingService;
         this.chatClient = chatClientBuilder.build();
     }
 
@@ -161,6 +165,9 @@ public class ResumeController {
                 .build();
 
         historyRepository.save(history);
+
+        // Auto-embed resume into PGVector for RAG-powered chatbot context
+        embeddingService.embedResume(resumeJson, user.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "id", history.getId(),

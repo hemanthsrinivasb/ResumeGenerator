@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import { FaBrain, FaTrash, FaDownload, FaShare, FaPlus, FaSignOutAlt } from "react-icons/fa";
 import { BiHistory } from "react-icons/bi";
 import { getResumeHistory, deleteResume, getUser, logout, isLoggedIn } from "../api/ResumeService";
+import ChatbotButton from "../components/Chatbot/ChatbotButton";
+import ChatPanel from "../components/Chatbot/ChatPanel";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -135,6 +137,8 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      <ChatbotButton />
+      <ChatPanel />
     </div>
   );
 };
