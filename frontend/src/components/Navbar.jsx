@@ -1,7 +1,11 @@
 import React from "react";
 import { Link } from "react-router";
+import { isLoggedIn } from "../api/ResumeService";
+
+const navLink = "hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all after:duration-300 hover:after:w-full";
 
 function Navbar() {
+  const loggedIn = isLoggedIn();
   return (
     <div className="navbar shadow bg-base-100 animate-fade-in">
       <div className="navbar-start">
@@ -26,30 +30,16 @@ function Navbar() {
             tabIndex={0}
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow animate-flip-down"
           >
-            <li>
-              <Link 
-                to={"/about"} 
-                className="hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
-              >
-                About
-              </Link>
-            </li>
-            <li>
-              <Link
-                to={"/services"}
-                className="hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
-              >
-                Services
-              </Link>
-            </li>
-            <li>
-              <Link
-                to={"/contact"}
-                className="hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
-              >
-                Contact Us
-              </Link>
-            </li>
+            <li><Link to="/about"    className={navLink}>About</Link></li>
+            <li><Link to="/services" className={navLink}>Services</Link></li>
+            <li><Link to="/contact"  className={navLink}>Contact Us</Link></li>
+            <li><Link to="/jobs"     className={navLink}>Jobs</Link></li>
+            {loggedIn && <>
+              <li><Link to="/analytics" className={navLink}>Analytics</Link></li>
+              <li><Link to="/interview" className={navLink}>Interview</Link></li>
+              <li><Link to="/agents"    className={navLink}>AI Panel</Link></li>
+              <li><Link to="/portfolio" className={navLink}>Portfolio</Link></li>
+            </>}
           </ul>
         </div>
         <Link 
@@ -85,14 +75,13 @@ function Navbar() {
               Contact Us
             </Link>
           </li>
-          <li>
-            <Link
-              to={"/jobs"}
-              className="hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
-            >
-              Jobs
-            </Link>
-          </li>
+          <li><Link to="/jobs"      className={navLink}>Jobs</Link></li>
+          {loggedIn && <>
+            <li><Link to="/analytics" className={navLink}>Analytics</Link></li>
+            <li><Link to="/interview" className={navLink}>Interview</Link></li>
+            <li><Link to="/agents"    className={navLink}>AI Panel</Link></li>
+            <li><Link to="/portfolio" className={navLink}>Portfolio</Link></li>
+          </>}
         </ul>
       </div>
       <div className="navbar-end gap-2">

@@ -46,6 +46,8 @@ public class SecurityConfig {
                 ).permitAll()
                 // Public share links
                 .requestMatchers("/api/v1/resume/share/**").permitAll()
+                // Job search (public endpoint)
+                .requestMatchers("/api/v1/jobs/search").permitAll()
                 // Dev tools
                 .requestMatchers("/h2-console/**").permitAll()
                 // Docs
