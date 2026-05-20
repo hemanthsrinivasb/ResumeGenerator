@@ -2,7 +2,7 @@
 
 > **Full-stack AI-native career OS** — resume generation, multi-agent review, RAG chatbot, voice interview room, career workflow automation, market intelligence, and multimodal analysis. Built on Spring Boot 3 + Spring AI + React 18 + OpenAI.
 
-![Java](https://img.shields.io/badge/Java-17-ED8B00?style=flat&logo=openjdk&logoColor=white)
+![Java](https://img.shields.io/badge/Java-25-ED8B00?style=flat&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.4-6DB33F?style=flat&logo=spring-boot)
 ![Spring AI](https://img.shields.io/badge/Spring_AI-1.0.0--M6-6DB33F?style=flat&logo=spring)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)
@@ -77,7 +77,7 @@
 
 | Layer | Technology | Version | Notes |
 |---|---|---|---|
-| Backend | Spring Boot | 3.4.4 | Java 17, Maven |
+| Backend | Spring Boot | 3.4.4 | Java 25, Maven |
 | AI | Spring AI | 1.0.0-M6 | ChatClient.Builder pattern |
 | LLM | OpenAI API | — | `gpt-4o-mini` (configurable via `AI_MODEL`) |
 | Embedding | OpenAI API | — | `text-embedding-3-small` (1536-dim) |

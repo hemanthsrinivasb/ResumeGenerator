@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 WORKDIR /app
 COPY target/resume-ai.jar app.jar
 EXPOSE 8050
