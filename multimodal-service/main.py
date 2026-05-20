@@ -18,8 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL", "deepseek-r1:latest")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL   = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # Lazy-load heavy models to avoid crash on startup if not installed
 _whisper_model  = None
@@ -32,15 +32,16 @@ def get_whisper():
         _whisper_model = whisper.load_model("base")
     return _whisper_model
 
-def call_ollama(prompt: str) -> str:
+def call_openai(prompt: str) -> str:
     try:
-        resp = requests.post(
-            f"{OLLAMA_BASE_URL}/api/generate",
-            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=120,
+        import openai
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
         )
-        resp.raise_for_status()
-        return resp.json().get("response", "").strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"AI error: {str(e)}"
 
@@ -140,7 +141,7 @@ async def analyze_video_frame(file: UploadFile = File(...)):
 async def analyze_communication(transcript: str = Form(...)):
     """
     Accepts a transcript string.
-    Returns communication quality scores via Ollama AI.
+    Returns communication quality scores via OpenAI.
     """
     if not transcript.strip():
         raise HTTPException(status_code=400, detail="transcript is required")
@@ -157,7 +158,7 @@ async def analyze_communication(transcript: str = Form(...)):
         "SUGGESTION_2: (another specific improvement)\n"
         "STRENGTH: (what was done well)\n"
     )
-    raw = call_ollama(prompt)
+    raw = call_openai(prompt)
 
     def extract(key):
         for line in raw.split("\n"):
@@ -241,7 +242,7 @@ async def analyze_github(username: str = Form(...), token: str = Form("")):
             "PROFILE_SUMMARY: (2-sentence honest assessment)\n"
             "TOP_RECOMMENDATION: (single most impactful thing to improve profile)\n"
         )
-        raw = call_ollama(prompt)
+        raw = call_openai(prompt)
 
         def extract(key):
             for line in raw.split("\n"):

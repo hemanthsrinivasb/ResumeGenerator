@@ -4,9 +4,8 @@ metadata:
   name: backend-config
   namespace: resume-platform
 data:
-  OLLAMA_BASE_URL: "http://ollama:11434"
-  AI_MODEL: "deepseek-r1:latest"
-  EMBEDDING_MODEL: "nomic-embed-text"
+  AI_MODEL: "gpt-4o-mini"
+  EMBEDDING_MODEL: "text-embedding-3-small"
   DB_URL: "jdbc:postgresql://postgres:5432/resumedb"
   DB_DRIVER: "org.postgresql.Driver"
   DB_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
@@ -53,6 +52,11 @@ spec:
                 secretKeyRef:
                   name: jwt-secret
                   key: secret
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openai-secret
+                  key: api-key
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -86,3 +90,12 @@ metadata:
 type: Opaque
 stringData:
   secret: dGhpcyBpcyBhIHZlcnkgbG9uZyBzZWNyZXQga2V5IGZvciBITUFDLVNIQTI1NiBoYXNoaW5n
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: openai-secret
+  namespace: resume-platform
+type: Opaque
+stringData:
+  api-key: "${OPENAI_API_KEY}"  # kubectl create secret generic openai-secret --from-literal=api-key=sk-...

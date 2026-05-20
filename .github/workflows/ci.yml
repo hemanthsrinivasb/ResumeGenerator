@@ -28,7 +28,7 @@ jobs:
           cache: maven
 
       - name: Build & test
-        run: ./mvnw clean verify -Dspring.ai.ollama.chat.enabled=false
+        run: ./mvnw clean verify -q
         env:
           DB_URL: jdbc:h2:mem:testdb
           DB_DRIVER: org.h2.Driver
@@ -36,6 +36,7 @@ jobs:
           DB_PASSWORD: ""
           DB_DIALECT: org.hibernate.dialect.H2Dialect
           JWT_SECRET: dGVzdHNlY3JldGtleXRlc3RzZWNyZXRrZXl0ZXN0c2Vj
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4

@@ -2,24 +2,6 @@ version: "3.9"
 
 services:
 
-  # ── Ollama LLM runtime ──────────────────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    container_name: resume-ollama
-    volumes:
-      - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
-    restart: unless-stopped
-    # GPU support (uncomment if you have NVIDIA GPU + nvidia-container-toolkit)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
   # ── PostgreSQL database (with pgvector extension) ───────────────
   postgres:
     image: pgvector/pgvector:pg16
@@ -49,8 +31,9 @@ services:
     ports:
       - "8050:8050"
     environment:
-      OLLAMA_BASE_URL: http://ollama:11434
-      AI_MODEL: deepseek-r1:latest
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AI_MODEL: gpt-4o-mini
+      EMBEDDING_MODEL: text-embedding-3-small
       DB_URL: jdbc:postgresql://postgres:5432/resumedb
       DB_DRIVER: org.postgresql.Driver
       DB_USER: resume_user
@@ -59,13 +42,10 @@ services:
       JWT_SECRET: dGhpcyBpcyBhIHZlcnkgbG9uZyBzZWNyZXQga2V5IGZvciBITUFDLVNIQTI1NiBoYXNoaW5n
       JWT_EXPIRATION: 86400000
       APP_RAG_ENABLED: "true"
-      EMBEDDING_MODEL: nomic-embed-text
       MULTIMODAL_SERVICE_URL: http://multimodal-service:8070
     depends_on:
       postgres:
         condition: service_healthy
-      ollama:
-        condition: service_started
     restart: unless-stopped
 
   # ── Python Multimodal AI Service ───────────────────────────────
@@ -77,10 +57,8 @@ services:
     ports:
       - "8070:8070"
     environment:
-      OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: deepseek-r1:latest
-    depends_on:
-      - ollama
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: gpt-4o-mini
     restart: unless-stopped
 
   # ── Redis cache ─────────────────────────────────────────────────
@@ -109,5 +87,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  ollama_data:
   postgres_data:

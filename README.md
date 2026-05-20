@@ -1,6 +1,6 @@
 # AI Career Intelligence Platform
 
-> **Full-stack AI-native career OS** — resume generation, multi-agent review, RAG chatbot, voice interview room, career workflow automation, market intelligence, and multimodal analysis. Built on Spring Boot 3 + Spring AI + React 18 + Ollama.
+> **Full-stack AI-native career OS** — resume generation, multi-agent review, RAG chatbot, voice interview room, career workflow automation, market intelligence, and multimodal analysis. Built on Spring Boot 3 + Spring AI + React 18 + OpenAI.
 
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?style=flat&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.4-6DB33F?style=flat&logo=spring-boot)
@@ -16,14 +16,14 @@
 
 | Capability | What It Does |
 |---|---|
-| **AI Resume Generation** | Prompt → structured JSON resume via Ollama DeepSeek-r1 (batch + SSE streaming) |
-| **RAG Chatbot** | PGVector semantic search across your resume history; nomic-embed-text embeddings |
+| **AI Resume Generation** | Prompt → structured JSON resume via OpenAI `gpt-4o-mini` (batch + SSE streaming) |
+| **RAG Chatbot** | PGVector semantic search across your resume history; `text-embedding-3-small` embeddings |
 | **Multi-Agent Expert Panel** | 4 concurrent AI agents: ATS optimizer, recruiter, staff engineer, career coach |
 | **Voice Interview Room** | AI speaks questions (TTS), you answer via mic (MediaRecorder), emotion detection via webcam |
 | **Career Workflow Engine** | Goal → 5-stage autonomous AI pipeline: gap analysis, roadmap, resume rewrite, interview prep, timeline |
 | **AI Digital Twin** | Hiring simulation with shortlist probability + market readiness radial charts; 1/3/5-yr trajectory |
 | **Multimodal Engine** | Audio confidence analysis (Whisper + librosa), video emotion detection (DeepFace), communication scoring |
-| **GitHub Intelligence** | GitHub profile analysis → technical depth, diversity, OSS contribution scores via Ollama |
+| **GitHub Intelligence** | GitHub profile analysis → technical depth, diversity, OSS contribution scores via OpenAI |
 | **Job Application Tracker** | Kanban board (5 columns) + AI resume tailoring + cover letter generation + rejection analysis |
 | **Market Intelligence** | Skill demand bar charts, salary tier insights, hiring trends — all from live Remotive API + AI |
 | **Portfolio Generator** | 3 themes (Minimal/Tech/Creative), downloadable ZIP, GitHub profile integration |
@@ -56,18 +56,18 @@
 │  │  MockInterviewService │ MarketIntelligenceService         │   │
 │  │  JobApplicationService │ PromptEvaluationService          │   │
 │  └────────────┬──────────────────────┬───────────────────────┘  │
-│  ┌────────────▼───┐      ┌───────────▼──────────────────────┐   │
-│  │  Ollama (11434) │      │  PGVector (Spring AI Store)      │   │
-│  │  deepseek-r1   │      │  nomic-embed-text embeddings      │   │
-│  └────────────────┘      └──────────────────────────────────┘   │
-└───────────────────┬─────────────────────────────────────────────┘
+│  ┌────────────▼───────────┐  ┌───────────▼──────────────────────┐  │
+│  │  OpenAI API            │  │  PGVector (Spring AI Store)      │  │
+│  │  gpt-4o-mini (chat)    │  │  text-embedding-3-small          │  │
+│  └────────────────────────┘  └──────────────────────────────────┘  │
+└───────────────────┬──────────────────────────────────────────────┘
         │           │
 ┌───────▼──────┐ ┌──▼───────────────────┐ ┌──────────────┐
 │multimodal-   │ │  PostgreSQL 16        │ │  Redis 7     │
 │service(8070) │ │  (pgvector image)     │ │  (cache)     │
 │Python FastAPI│ └──────────────────────┘ └──────────────┘
 │Whisper+DeepFace│
-│librosa+Ollama  │
+│librosa+OpenAI  │
 └──────────────┘
 ```
 
@@ -79,8 +79,8 @@
 |---|---|---|---|
 | Backend | Spring Boot | 3.4.4 | Java 17, Maven |
 | AI | Spring AI | 1.0.0-M6 | ChatClient.Builder pattern |
-| LLM Runtime | Ollama | latest | deepseek-r1:latest |
-| Embedding | Ollama | latest | nomic-embed-text |
+| LLM | OpenAI API | — | `gpt-4o-mini` (configurable via `AI_MODEL`) |
+| Embedding | OpenAI API | — | `text-embedding-3-small` (1536-dim) |
 | Vector Store | Spring AI PGVector | 1.0.0-M6 | Falls back to H2 when RAG disabled |
 | Database | PostgreSQL 16 | pgvector image | H2 for local dev |
 | Cache | Redis | 7-alpine | Resume history caching |
@@ -100,13 +100,13 @@
 ## AI Features
 
 ### Resume Generation + Streaming
-- **POST /api/v1/resume/generate** — prompt → full resume JSON via Ollama
+- **POST /api/v1/resume/generate** — prompt → full resume JSON via OpenAI `gpt-4o-mini`
 - **GET /api/v1/resume/stream** — SSE streaming with live token output
 - Voice input: browser `SpeechRecognition` API + mic button in textarea
 - Resume saved to DB → browsable history in Dashboard
 
 ### RAG Chatbot
-- `EmbeddingService` chunks resume into 7 semantic sections, embeds with nomic-embed-text
+- `EmbeddingService` chunks resume into 7 semantic sections, embeds with `text-embedding-3-small`
 - Cosine similarity retrieval from PGVector; graceful H2 fallback when `APP_RAG_ENABLED=false`
 - Floating `ChatPanel` with SSE streaming + react-markdown rendering
 
@@ -133,10 +133,10 @@
 - `RadialBarChart` gauges; 3-column timeline cards
 
 ### Multimodal Engine
-- GitHub Analysis: GitHub REST API → top repos → Ollama → technical depth, code diversity, OSS score
+- GitHub Analysis: GitHub REST API → top repos → OpenAI → technical depth, code diversity, OSS score
 - Audio Analysis: Whisper transcription + librosa speech rate / hesitation / confidence heuristic
 - Video Emotion: DeepFace per-frame (dominant + per-emotion confidence bars)
-- Communication Scoring: Ollama clarity, professionalism, technical depth, overall
+- Communication Scoring: OpenAI clarity, professionalism, technical depth, overall
 
 ### Job Application Tracker
 - Kanban board: Saved → Applied → Interview → Offer → Rejected
@@ -217,14 +217,13 @@ ResumeGenerator/
 │       ├── pages/                      # 12 pages
 │       └── components/                 # FeedbackWidget, ChatPanel, PromptInput, Navbar
 ├── multimodal-service/                 # Python FastAPI
-│   ├── main.py                         # Whisper + DeepFace + librosa + Ollama
+│   ├── main.py                         # Whisper + DeepFace + librosa + OpenAI SDK
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── k8s/                                # Kubernetes manifests
 │   ├── namespace.yaml
 │   ├── postgres-deployment.yaml
-│   ├── ollama-deployment.yaml
-│   ├── backend-deployment.yaml
+│   ├── backend-deployment.yaml         # includes openai-secret ref
 │   ├── frontend-deployment.yaml
 │   └── ingress.yaml
 ├── prometheus/prometheus.yml           # Prometheus scrape config
@@ -235,36 +234,83 @@ ResumeGenerator/
 
 ---
 
-## Quick Start
+## Prerequisites
 
-### Path A — Local H2 (zero external dependencies)
+### OpenAI API Key
+
+This project uses the **OpenAI API** (`gpt-4o-mini` by default) for all AI features — resume generation, agents, interview, workflow, career twin, market intelligence, and multimodal communication analysis.
+
+**Step 1 — Get an API key**
+
+1. Go to [platform.openai.com](https://platform.openai.com) and sign up / log in
+2. Navigate to **API Keys** → click **Create new secret key**
+3. Copy the key (starts with `sk-...`) — you won't see it again
+
+**Step 2 — Fund your account** (required for API calls)
+
+- Add a payment method under **Billing → Add payment method**
+- `gpt-4o-mini` costs **~$0.15 per 1M input tokens** — a full development session typically costs a few cents
+- Optionally set a monthly usage limit under **Billing → Usage limits**
+
+**Step 3 — Set the environment variable**
 
 ```bash
-# Start Ollama and pull models
-ollama pull deepseek-r1:latest
-ollama pull nomic-embed-text
+# macOS / Linux
+export OPENAI_API_KEY=sk-...
 
-# Start backend (H2 in-memory, RAG disabled by default)
+# Windows PowerShell
+$env:OPENAI_API_KEY = "sk-..."
+
+# Windows CMD
+set OPENAI_API_KEY=sk-...
+```
+
+> **Tip:** Add the `export` line to your `~/.zshrc` or `~/.bashrc` so it persists across terminal sessions.
+
+---
+
+## Quick Start
+
+### Path A — Local H2 (minimal setup — just Java + Node + an API key)
+
+```bash
+# 1. Set your OpenAI API key (see Prerequisites above)
+export OPENAI_API_KEY=sk-...
+
+# 2. Start backend (H2 in-memory, RAG disabled by default — no PostgreSQL needed)
 cd Resume/demo
 ./mvnw spring-boot:run
 
-# Start frontend
+# 3. Start frontend (new terminal)
 cd frontend
 npm install && npm run dev
 ```
 
 Open http://localhost:5173 — register, generate a resume, explore all features.
 
-### Path B — Full Docker stack (5 services + Redis)
+> RAG chatbot is disabled in Path A (requires PostgreSQL + pgvector). All other AI features work fully.
+
+### Path B — Full Docker stack (5 services + Redis + RAG enabled)
+
+**Step 1 — Create a `.env` file** in the project root:
+
+```bash
+# .env
+OPENAI_API_KEY=sk-...
+```
+
+**Step 2 — Start all services:**
 
 ```bash
 docker compose up -d
+```
 
-# Pull AI models (first run only)
-docker exec resume-ollama ollama pull deepseek-r1:latest
-docker exec resume-ollama ollama pull nomic-embed-text
+That's it — no model pulling required. The OpenAI API is called over HTTPS; no local GPU or Ollama needed.
 
-# Optional: start Prometheus + Grafana monitoring
+**Step 3 (optional) — Add monitoring:**
+
+```bash
+# Prometheus + Grafana
 docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ```
 
@@ -283,9 +329,9 @@ docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
 | Variable | Default | Description |
 |---|---|---|
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
-| `AI_MODEL` | `deepseek-r1:latest` | Chat model name |
-| `EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model for RAG |
+| **`OPENAI_API_KEY`** | *(required)* | Your OpenAI secret key — get it at platform.openai.com |
+| `AI_MODEL` | `gpt-4o-mini` | OpenAI chat model (e.g. `gpt-4o`, `gpt-4o-mini`) |
+| `EMBEDDING_MODEL` | `text-embedding-3-small` | OpenAI embedding model for RAG |
 | `APP_RAG_ENABLED` | `false` | Enable PGVector RAG (requires PostgreSQL) |
 | `DB_URL` | H2 in-memory | PostgreSQL JDBC URL in production |
 | `DB_USER` / `DB_PASSWORD` | `sa` / empty | Database credentials |
@@ -296,8 +342,10 @@ docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 | `DOCKER_USERNAME` | — | GitHub Actions secret for Docker Hub push |
 | `DOCKER_PASSWORD` | — | GitHub Actions secret for Docker Hub push |
 
+> **GitHub Actions:** Add `OPENAI_API_KEY` as a repository secret under **Settings → Secrets and variables → Actions** so CI tests can start the application context.
+
 ---
 
 ## Why This Project
 
-This platform demonstrates production-grade AI application architecture: multi-service Docker orchestration, retrieval-augmented generation with vector embeddings, real-time SSE streaming, a Python ML microservice integrated via REST, voice and video multimodal processing in the browser, Spring Security 6 JWT authentication, and Kubernetes-ready deployment with observability. Every AI feature uses structured prompting with deterministic output parsing — no hallucination-prone free-form responses.
+This platform demonstrates production-grade AI application architecture: OpenAI API integration via Spring AI's provider-agnostic `ChatClient`, retrieval-augmented generation with PGVector and `text-embedding-3-small`, real-time SSE streaming, a Python ML microservice (Whisper, DeepFace, librosa, OpenAI SDK) integrated via REST, voice and video multimodal processing in the browser, Spring Security 6 JWT authentication, and Kubernetes-ready deployment with Prometheus observability. Every AI feature uses structured prompting with deterministic output parsing — no hallucination-prone free-form responses.
