@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Users, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { axiosInstance } from "../api/ResumeService";
 import toast from "react-hot-toast";
+import FeedbackWidget from "../components/FeedbackWidget";
 
 const AGENTS = [
   { key: "ATS",       label: "ATS Optimizer",  emoji: "🤖", desc: "Keyword density, formatting, ATS compatibility",  color: "border-primary"   },
@@ -201,6 +202,10 @@ export default function AgentPanel() {
                         ))}
                       </div>
                     )}
+
+                    <div className="mt-2 pt-2 border-t border-base-200">
+                      <FeedbackWidget endpointType="AGENTS" aiResponseSnippet={data.response} compact />
+                    </div>
                   </div>
                 </motion.div>
               );

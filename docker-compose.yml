@@ -60,12 +60,41 @@ services:
       JWT_EXPIRATION: 86400000
       APP_RAG_ENABLED: "true"
       EMBEDDING_MODEL: nomic-embed-text
+      MULTIMODAL_SERVICE_URL: http://multimodal-service:8070
     depends_on:
       postgres:
         condition: service_healthy
       ollama:
         condition: service_started
     restart: unless-stopped
+
+  # ── Python Multimodal AI Service ───────────────────────────────
+  multimodal-service:
+    build:
+      context: ./multimodal-service
+      dockerfile: Dockerfile
+    container_name: resume-multimodal
+    ports:
+      - "8070:8070"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: deepseek-r1:latest
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  # ── Redis cache ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: resume-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ── React frontend ──────────────────────────────────────────────
   frontend:

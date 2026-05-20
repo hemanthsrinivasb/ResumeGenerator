@@ -114,6 +114,76 @@ public class MockInterviewService {
         );
     }
 
+    // ── Submit answer with audio metrics ──────────────────────────────
+
+    @Transactional
+    public Map<String, Object> submitAnswerWithAudio(Long sessionId, User user, String answer, String audioAnalysisJson) {
+        InterviewSession session = sessionRepository.findByIdAndUser(sessionId, user)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        if (session.getStatus() == InterviewSession.SessionStatus.COMPLETED) {
+            throw new RuntimeException("Session already completed");
+        }
+
+        List<InterviewQuestion> questions = questionRepository.findBySessionOrderBySequenceNumberAsc(session);
+        InterviewQuestion current = questions.stream()
+                .filter(q -> q.getUserAnswer() == null)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No pending question found"));
+
+        // Parse audio metrics from JSON string
+        int speechRate = extractJsonInt(audioAnalysisJson, "speech_rate_wpm", 0);
+        int hesitationCount = extractJsonInt(audioAnalysisJson, "hesitation_count", 0);
+        int confidenceScore = extractJsonInt(audioAnalysisJson, "confidence_score", 0);
+        String dominantEmotion = extractJsonString(audioAnalysisJson, "dominant_emotion", "neutral");
+
+        String evaluation = evaluateAnswerWithAudio(
+                current.getQuestionText(), answer,
+                session.getJobTitle(), session.getInterviewType().name(),
+                speechRate, hesitationCount, confidenceScore);
+        int score = extractScore(evaluation);
+
+        current.setUserAnswer(answer);
+        current.setAiEvaluation(evaluation);
+        current.setScore(score);
+        current.setAudioConfidenceScore(confidenceScore);
+        current.setHesitationCount(hesitationCount);
+        current.setDominantEmotion(dominantEmotion);
+        questionRepository.save(current);
+
+        int answered = session.getQuestionsAnswered() + 1;
+        session.setQuestionsAnswered(answered);
+        sessionRepository.save(session);
+
+        boolean sessionComplete = answered >= session.getTotalQuestions();
+        if (sessionComplete) {
+            return endSession(session, questions);
+        }
+
+        InterviewQuestion next = generateNextQuestion(session, answered + 1);
+        questionRepository.save(next);
+
+        return Map.of(
+                "sessionComplete",  false,
+                "questionsAnswered", answered,
+                "totalQuestions",   session.getTotalQuestions(),
+                "evaluation", Map.of(
+                        "score",            score,
+                        "feedback",         evaluation,
+                        "questionId",       current.getId(),
+                        "audioConfidence",  confidenceScore,
+                        "hesitationCount",  hesitationCount,
+                        "dominantEmotion",  dominantEmotion
+                ),
+                "nextQuestion", Map.of(
+                        "id",             next.getId(),
+                        "text",           next.getQuestionText(),
+                        "category",       next.getCategory(),
+                        "sequenceNumber", next.getSequenceNumber()
+                )
+        );
+    }
+
     // ── End session early ──────────────────────────────────────────────
 
     @Transactional
@@ -261,6 +331,69 @@ public class MockInterviewService {
                 .idealAnswer(idealAnswer)
                 .sequenceNumber(seqNum)
                 .build();
+    }
+
+    private String evaluateAnswerWithAudio(String question, String answer, String jobTitle, String interviewType,
+                                              int speechRate, int hesitationCount, int confidenceScore) {
+        if (answer == null || answer.isBlank()) {
+            return "No answer provided. Score: 2/10. Please attempt to answer the question.";
+        }
+
+        String prompt = """
+            You are evaluating a candidate answer in a %s interview for %s.
+
+            Question: %s
+            Candidate's Answer: %s
+
+            Voice delivery metrics:
+            - Speech rate: %d words/min (ideal: 120–160 wpm)
+            - Hesitation count: %d (filler words / pauses detected)
+            - Voice confidence score: %d/100
+
+            Incorporate delivery quality into your evaluation. Penalize heavily for very high hesitations or very low confidence.
+            Evaluate and respond in this exact format:
+            Score: X/10
+            Strengths: [what they did well]
+            Improvements: [what they should add or clarify]
+            Delivery: [feedback on speech rate, confidence, and fluency]
+            Tip: [one actionable suggestion for next time]
+            """.formatted(interviewType, jobTitle, question, answer, speechRate, hesitationCount, confidenceScore);
+
+        return chatClient().prompt().user(prompt).call().content();
+    }
+
+    private int extractJsonInt(String json, String field, int defaultVal) {
+        if (json == null || json.isBlank()) return defaultVal;
+        try {
+            String key = "\"" + field + "\"";
+            int idx = json.indexOf(key);
+            if (idx == -1) return defaultVal;
+            int colon = json.indexOf(':', idx + key.length());
+            if (colon == -1) return defaultVal;
+            String sub = json.substring(colon + 1, Math.min(colon + 15, json.length())).trim();
+            String num = sub.replaceAll("[^0-9]", " ").trim().split("\\s+")[0];
+            return Integer.parseInt(num);
+        } catch (Exception e) {
+            return defaultVal;
+        }
+    }
+
+    private String extractJsonString(String json, String field, String defaultVal) {
+        if (json == null || json.isBlank()) return defaultVal;
+        try {
+            String key = "\"" + field + "\"";
+            int idx = json.indexOf(key);
+            if (idx == -1) return defaultVal;
+            int colon = json.indexOf(':', idx + key.length());
+            if (colon == -1) return defaultVal;
+            int q1 = json.indexOf('"', colon + 1);
+            if (q1 == -1) return defaultVal;
+            int q2 = json.indexOf('"', q1 + 1);
+            if (q2 == -1) return defaultVal;
+            return json.substring(q1 + 1, q2);
+        } catch (Exception e) {
+            return defaultVal;
+        }
     }
 
     private String extractJsonField(String json, String field) {

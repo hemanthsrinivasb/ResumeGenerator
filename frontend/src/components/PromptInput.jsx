@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { FaBrain, FaPaperPlane, FaTrash } from "react-icons/fa";
+import { FaBrain, FaPaperPlane, FaTrash, FaMicrophone, FaStop } from "react-icons/fa";
 import { generateResume, streamResume } from "../api/ResumeService";
 
 const PromptInput = ({ onGenerated }) => {
@@ -8,6 +8,37 @@ const PromptInput = ({ onGenerated }) => {
   const [loading, setLoading]         = useState(false);
   const [streaming, setStreaming]      = useState(false);
   const [streamText, setStreamText]   = useState("");
+  const [listening, setListening]     = useState(false);
+  const recognitionRef                = useRef(null);
+
+  const toggleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { toast.error("Voice input not supported in this browser. Use Chrome or Edge."); return; }
+
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(r => r[0].transcript).join(" ");
+      setDescription(prev => prev + (prev.endsWith(" ") || prev === "" ? "" : " ") + transcript);
+    };
+    recognition.onerror = () => { setListening(false); toast.error("Voice recognition error"); };
+    recognition.onend   = () => setListening(false);
+
+    recognition.start();
+    setListening(true);
+    toast.success("Listening… speak your resume description");
+  };
 
   const handleGenerate = async () => {
     if (!description.trim()) { toast.error("Please enter a description"); return; }
@@ -67,13 +98,24 @@ const PromptInput = ({ onGenerated }) => {
         Describe yourself — your experience, skills, education, projects — and let AI build your resume.
       </p>
 
-      <textarea
-        disabled={loading || streaming}
-        className="textarea textarea-bordered w-full h-48 mb-4 resize-none bg-base-100 transition focus:ring-2 focus:ring-primary"
-        placeholder="E.g. I am a backend developer with 3 years of experience in Java and Spring Boot, built microservices at XYZ Corp, have a B.Tech in CS..."
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+      <div className="relative mb-4">
+        <textarea
+          disabled={loading || streaming}
+          className="textarea textarea-bordered w-full h-48 resize-none bg-base-100 transition focus:ring-2 focus:ring-primary pr-12"
+          placeholder="E.g. I am a backend developer with 3 years of experience in Java and Spring Boot, built microservices at XYZ Corp, have a B.Tech in CS..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={toggleVoiceInput}
+          disabled={loading || streaming}
+          title={listening ? "Stop voice input" : "Speak your description"}
+          className={`absolute bottom-3 right-3 btn btn-circle btn-sm ${listening ? 'btn-error animate-pulse' : 'btn-ghost'}`}
+        >
+          {listening ? <FaStop size={12} /> : <FaMicrophone size={12} />}
+        </button>
+      </div>
 
       {/* SSE streaming display */}
       {streaming && streamText && (

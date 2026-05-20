@@ -40,4 +40,14 @@ public class InterviewQuestion {
 
     @Column(columnDefinition = "TEXT")
     private String idealAnswer;
+
+    // Voice/multimodal enrichment fields (nullable — set when user answers via voice)
+    @Column
+    private Integer audioConfidenceScore;
+
+    @Column
+    private Integer hesitationCount;
+
+    @Column
+    private String dominantEmotion;
 }

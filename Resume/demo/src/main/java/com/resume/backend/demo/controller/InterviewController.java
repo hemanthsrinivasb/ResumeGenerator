@@ -40,7 +40,7 @@ public class InterviewController {
     }
 
     @PostMapping("/sessions/{id}/answer")
-    @Operation(summary = "Submit an answer to the current question — returns evaluation + next question",
+    @Operation(summary = "Submit an answer — optionally include audioAnalysis JSON for voice-enhanced evaluation",
                security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Map<String, Object>> submitAnswer(
             @PathVariable Long id,
@@ -48,7 +48,12 @@ public class InterviewController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = userService.findByEmail(userDetails.getUsername());
-        String answer = body.getOrDefault("answer", "");
+        String answer       = body.getOrDefault("answer", "");
+        String audioAnalysis = body.get("audioAnalysis");
+
+        if (audioAnalysis != null && !audioAnalysis.isBlank()) {
+            return ResponseEntity.ok(interviewService.submitAnswerWithAudio(id, user, answer, audioAnalysis));
+        }
         return ResponseEntity.ok(interviewService.submitAnswer(id, user, answer));
     }
 

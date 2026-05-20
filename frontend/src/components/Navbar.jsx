@@ -39,6 +39,11 @@ function Navbar() {
               <li><Link to="/interview" className={navLink}>Interview</Link></li>
               <li><Link to="/agents"    className={navLink}>AI Panel</Link></li>
               <li><Link to="/portfolio" className={navLink}>Portfolio</Link></li>
+              <li><Link to="/workflow"     className={navLink}>⚡ Workflow</Link></li>
+              <li><Link to="/digital-twin" className={navLink}>🧬 Digital Twin</Link></li>
+              <li><Link to="/multimodal"   className={navLink}>🎬 Multimodal</Link></li>
+              <li><Link to="/job-tracker"  className={navLink}>💼 Job Tracker</Link></li>
+              <li><Link to="/market-intel" className={navLink}>📊 Market Intel</Link></li>
             </>}
           </ul>
         </div>
@@ -81,6 +86,11 @@ function Navbar() {
             <li><Link to="/interview" className={navLink}>Interview</Link></li>
             <li><Link to="/agents"    className={navLink}>AI Panel</Link></li>
             <li><Link to="/portfolio" className={navLink}>Portfolio</Link></li>
+            <li><Link to="/workflow"     className={navLink}>⚡ Workflow</Link></li>
+            <li><Link to="/digital-twin" className={navLink}>🧬 Digital Twin</Link></li>
+            <li><Link to="/multimodal"   className={navLink}>🎬 Multimodal</Link></li>
+            <li><Link to="/job-tracker"  className={navLink}>💼 Job Tracker</Link></li>
+            <li><Link to="/market-intel" className={navLink}>📊 Market Intel</Link></li>
           </>}
         </ul>
       </div>

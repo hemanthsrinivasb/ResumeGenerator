@@ -18,6 +18,12 @@ import Analytics      from "./pages/Analytics";
 import Interview      from "./pages/Interview";
 import AgentPanel     from "./pages/AgentPanel";
 import Portfolio      from "./pages/Portfolio";
+import Workflow       from "./pages/Workflow";
+import DigitalTwin    from "./pages/DigitalTwin";
+import Multimodal          from "./pages/Multimodal";
+import ApplicationTracker  from "./pages/ApplicationTracker";
+import MarketIntel         from "./pages/MarketIntel";
+import AIHealth            from "./pages/AIHealth";
 
 import { isLoggedIn } from "./api/ResumeService";
 
@@ -47,6 +53,12 @@ createRoot(document.getElementById("root")).render(
           <Route path="interview"       element={<Interview />} />
           <Route path="agents"          element={<AgentPanel />} />
           <Route path="portfolio"       element={<Portfolio />} />
+          <Route path="workflow"        element={<Workflow />} />
+          <Route path="digital-twin"    element={<DigitalTwin />} />
+          <Route path="multimodal"      element={<Multimodal />} />
+          <Route path="job-tracker"     element={<ApplicationTracker />} />
+          <Route path="market-intel"    element={<MarketIntel />} />
+          <Route path="ai-health"       element={<AIHealth />} />
         </Route>
       </Routes>
     </BrowserRouter>

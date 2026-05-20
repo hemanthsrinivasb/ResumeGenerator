@@ -10,6 +10,7 @@ import Resume from "../components/Resume";
 import PromptInput from "../components/PromptInput";
 import AtsCheckerModal from "../components/AtsCheckerModal";
 import CoverLetterModal from "../components/CoverLetterModal";
+import FeedbackWidget from "../components/FeedbackWidget";
 import { loadResume, saveResume, isLoggedIn } from "../api/ResumeService";
 
 const EMPTY_RESUME = {
@@ -284,6 +285,9 @@ const GenerateResume = () => {
 
         <AtsCheckerModal resumeData={data} />
         <CoverLetterModal resumeData={data} />
+        <div className="mt-4 max-w-sm">
+          <FeedbackWidget endpointType="GENERATE" aiResponseSnippet={JSON.stringify(data).slice(0, 500)} compact />
+        </div>
       </motion.div>
     );
   }
