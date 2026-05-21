@@ -385,8 +385,7 @@ export default function Multimodal() {
                     <div className="card-body">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="text-6xl">{
-                          { happy: '😊', neutral: '😐', surprised: '😮', sad: '😢', angry: '😠', fearful: '😨', disgusted: '🤢' }
-                          [videoResult.dominantEmotion] || '🎭'
+                          { happy: '😊', neutral: '😐', surprised: '😮', sad: '😢', angry: '😠', fearful: '😨', disgusted: '🤢' }[videoResult.dominantEmotion] || '🎭'
                         }</div>
                         <div>
                           <p className="text-xs text-base-content/50 mb-1">DOMINANT EMOTION</p>
