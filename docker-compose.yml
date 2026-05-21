@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL database (with pgvector extension) ───────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: resume-postgres
+    environment:
+      POSTGRES_DB: resumedb
+      POSTGRES_USER: resume_user
+      POSTGRES_PASSWORD: resume_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resume_user -d resumedb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Spring Boot backend ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./Resume/demo
+      dockerfile: Dockerfile
+    container_name: resume-backend
+    ports:
+      - "8050:8050"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AI_MODEL: gpt-4o-mini
+      EMBEDDING_MODEL: text-embedding-3-small
+      DB_URL: jdbc:postgresql://postgres:5432/resumedb
+      DB_DRIVER: org.postgresql.Driver
+      DB_USER: resume_user
+      DB_PASSWORD: resume_pass
+      DB_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      JWT_SECRET: dGhpcyBpcyBhIHZlcnkgbG9uZyBzZWNyZXQga2V5IGZvciBITUFDLVNIQTI1NiBoYXNoaW5n
+      JWT_EXPIRATION: 86400000
+      APP_RAG_ENABLED: "true"
+      MULTIMODAL_SERVICE_URL: http://multimodal-service:8070
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Python Multimodal AI Service ───────────────────────────────
+  multimodal-service:
+    build:
+      context: ./multimodal-service
+      dockerfile: Dockerfile
+    container_name: resume-multimodal
+    ports:
+      - "8070:8070"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: gpt-4o-mini
+    restart: unless-stopped
+
+  # ── Redis cache ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: resume-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── React frontend ──────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: resume-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

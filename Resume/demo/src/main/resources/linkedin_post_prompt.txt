@@ -1,0 +1,26 @@
+You are a LinkedIn content strategist and personal branding expert. Create a compelling LinkedIn announcement post for a professional who is applying for or transitioning to a new role.
+
+Candidate Resume:
+{{resumeData}}
+
+Target Role:
+{{targetRole}}
+
+Write a LinkedIn post that:
+1. Opens with a strong hook (not "Excited to announce...")
+2. Highlights 2-3 of the candidate's most impressive achievements from their resume
+3. Connects their background to why they're passionate about the target role
+4. Ends with a call-to-action (open to opportunities, seeking connections in this space, etc.)
+5. Uses 3-5 relevant hashtags
+6. Is 150-250 words total — concise and punchy, not a wall of text
+7. Sounds authentic and human, not corporate or generic
+
+Also provide an "icebreaker" version (2-3 sentences) for commenting on other posts.
+
+Return ONLY valid JSON in this exact format:
+{
+  "fullPost": "The complete LinkedIn post text with hashtags",
+  "icebreaker": "Short 2-3 sentence version for commenting",
+  "suggestedHashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"],
+  "bestTimeToPost": "Tuesday or Wednesday morning, 8-10 AM in your timezone"
+}
