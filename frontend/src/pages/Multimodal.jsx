@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, Loader2, Github, Mic, Camera, CheckCircle } from 'lucide-react';
+import { Layers, Loader2, Mic, Camera, CheckCircle } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -159,7 +160,7 @@ export default function Multimodal() {
   })[e] || 'text-base-content';
 
   const TABS = [
-    { id: 'github', label: '🐙 GitHub', icon: <Github size={16} /> },
+    { id: 'github', label: '🐙 GitHub', icon: <FaGithub size={16} /> },
     { id: 'audio',  label: '🎙 Audio',  icon: <Mic size={16} /> },
     { id: 'video',  label: '📷 Emotion', icon: <Camera size={16} /> },
     { id: 'comm',   label: '💬 Communication', icon: null },
@@ -211,7 +212,7 @@ export default function Multimodal() {
                     </div>
                   </div>
                   <button className="btn btn-primary gap-2" onClick={analyzeGitHub} disabled={githubLoading}>
-                    {githubLoading ? <Loader2 size={16} className="animate-spin" /> : <Github size={16} />}
+                    {githubLoading ? <Loader2 size={16} className="animate-spin" /> : <FaGithub size={16} />}
                     {githubLoading ? 'Analyzing…' : 'Analyze GitHub Profile'}
                   </button>
                 </div>

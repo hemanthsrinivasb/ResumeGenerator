@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { RiRobot2Fill, RiSendPlanFill } from "react-icons/ri";
+import { RiRobot2Fill, RiSendPlaneFill } from "react-icons/ri";
 import { IoClose, IoTrash } from "react-icons/io5";
 import useChatStore from "../../store/chatStore";
 import ChatMessageBubble from "./ChatMessageBubble";
@@ -186,7 +186,7 @@ export default function ChatPanel() {
                 disabled={!input.trim() || isTyping}
                 className="flex-shrink-0 p-1.5 rounded-lg bg-violet-600 text-white disabled:opacity-40 hover:bg-violet-700 transition-colors"
               >
-                <RiSendPlanFill size={16} />
+                <RiSendPlaneFill size={16} />
               </button>
             </div>
             <p className="text-center text-xs text-base-content/40 mt-1">Enter to send · Shift+Enter for new line</p>
