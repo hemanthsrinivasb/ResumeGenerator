@@ -1,6 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { generateCoverLetter, generateLinkedinPost } from "../api/ResumeService";
+import ApiErrorModal from "./ApiErrorModal";
 
 const CoverLetterModal = ({ resumeData }) => {
   const [jobDescription, setJobDescription] = useState("");
@@ -9,15 +10,22 @@ const CoverLetterModal = ({ resumeData }) => {
   const [linkedinPost, setLinkedinPost]     = useState(null);
   const [activeTab, setActiveTab]           = useState("cover");
   const [loading, setLoading]               = useState(false);
+  const [apiError, setApiError]             = useState(null);
 
   const handleCoverLetter = async () => {
     if (!jobDescription.trim()) { toast.error("Please enter a Job Description"); return; }
     setLoading(true);
     try {
       const res = await generateCoverLetter(resumeData, jobDescription);
-      setCoverLetter(res.data?.coverLetter || "No cover letter generated");
-    } catch {
-      toast.error("Cover letter generation failed");
+      if (res.error) {
+        setApiError(res.error);
+      } else if (!res.data) {
+        setApiError("Backend succeeded but returned empty cover letter response.");
+      } else {
+        setCoverLetter(res.data?.coverLetter || "No cover letter generated");
+      }
+    } catch (err) {
+      setApiError(err);
     } finally {
       setLoading(false);
     }
@@ -28,9 +36,15 @@ const CoverLetterModal = ({ resumeData }) => {
     setLoading(true);
     try {
       const res = await generateLinkedinPost(resumeData, targetRole);
-      setLinkedinPost(res.data);
-    } catch {
-      toast.error("LinkedIn post generation failed");
+      if (res.error) {
+        setApiError(res.error);
+      } else if (!res.data) {
+        setApiError("Backend succeeded but returned empty LinkedIn post response.");
+      } else {
+        setLinkedinPost(res.data);
+      }
+    } catch (err) {
+      setApiError(err);
     } finally {
       setLoading(false);
     }
@@ -129,6 +143,11 @@ const CoverLetterModal = ({ resumeData }) => {
           <form method="dialog"><button className="btn">Close</button></form>
         </div>
       </div>
+      <ApiErrorModal
+        isOpen={!!apiError}
+        onClose={() => setApiError(null)}
+        error={apiError}
+      />
     </dialog>
   );
 };

@@ -42,7 +42,10 @@ public class SecurityConfig {
                     "/api/v1/resume/stream",
                     "/api/v1/resume/interview-questions",
                     "/api/v1/resume/skills-gap",
-                    "/api/v1/resume/linkedin-post"
+                    "/api/v1/resume/linkedin-post",
+                    "/api/v1/chat/message",
+                    "/api/v1/chat/stream",
+                    "/api/v1/chat/history/**"
                 ).permitAll()
                 // Public share links
                 .requestMatchers("/api/v1/resume/share/**").permitAll()

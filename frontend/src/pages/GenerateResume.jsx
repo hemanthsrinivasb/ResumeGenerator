@@ -12,6 +12,7 @@ import AtsCheckerModal from "../components/AtsCheckerModal";
 import CoverLetterModal from "../components/CoverLetterModal";
 import FeedbackWidget from "../components/FeedbackWidget";
 import { loadResume, saveResume, isLoggedIn } from "../api/ResumeService";
+import useChatStore from "../store/chatStore";
 
 const EMPTY_RESUME = {
   personalInformation: { fullName: "", email: "", phoneNumber: "", location: "", linkedIn: "", gitHub: "", portfolio: "" },
@@ -23,6 +24,8 @@ const EMPTY_RESUME = {
 const GenerateResume = () => {
   const location       = useLocation();
   const fileInputRef   = useRef(null);
+
+  const { setUpdateResumeCallback, setActiveResume, pendingResume, setPendingResume } = useChatStore();
 
   const [data, setData]                     = useState(EMPTY_RESUME);
   const [showFormUI, setShowFormUI]         = useState(false);
@@ -57,6 +60,32 @@ const GenerateResume = () => {
       }).catch(() => toast.error("Failed to load resume"));
     }
   }, [location.state]);
+
+  // Sync active resume data to chatStore
+  useEffect(() => {
+    setActiveResume(data);
+  }, [data, setActiveResume]);
+
+  useEffect(() => {
+    const callback = (newResume) => {
+      reset(newResume);
+      setData(newResume);
+      setShowPromptInput(false);
+      setShowFormUI(true);
+      toast.success("Applied AI suggestions to your resume!");
+    };
+    setUpdateResumeCallback(callback);
+
+    // Apply any pending resume suggestions from redirect
+    if (pendingResume) {
+      callback(pendingResume);
+      setPendingResume(null);
+    }
+
+    return () => {
+      setUpdateResumeCallback(null);
+    };
+  }, [reset, setUpdateResumeCallback, pendingResume, setPendingResume]);
 
   // ── Handlers ───────────────────────────────────────────────────
   const onSubmit = (formData) => {
@@ -123,42 +152,73 @@ const GenerateResume = () => {
 
   // ── Render helpers ─────────────────────────────────────────────
   const renderInput = (name, label, type = "text") => (
-    <div className="form-control w-full mb-4">
-      <label className="label"><span className="label-text font-medium">{label}</span></label>
-      <input type={type} {...register(name)}
-        className="input input-bordered rounded-xl w-full bg-base-100 transition focus:ring-2 focus:ring-primary" />
+    <div className="form-control w-full mb-3">
+      <label className="label py-1">
+        <span className="label-text text-slate-300 font-medium text-xs sm:text-sm">{label}</span>
+      </label>
+      <input 
+        type={type} 
+        {...register(name)}
+        className="input rounded-xl w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:border-primary/50 focus:outline-none transition-all duration-300 h-10 px-4 text-sm" 
+      />
     </div>
   );
 
   const renderFieldArray = (fields, label, name, keys) => (
-    <div className="form-control w-full mb-4">
-      <h3 className="text-xl font-semibold mb-2">{label}</h3>
+    <div className="form-control w-full mb-6">
+      <h3 className="text-lg font-bold mb-3 text-slate-200 border-b border-white/5 pb-1.5 flex items-center justify-between">
+        <span>{label}</span>
+        <span className="badge bg-white/5 border-white/10 text-slate-400 text-xs py-2.5 px-2 rounded-lg font-mono">
+          {fields.fields.length}
+        </span>
+      </h3>
       {fields.fields.map((field, index) => (
-        <div key={field.id} className="p-4 rounded-lg mb-4 bg-base-100 shadow border border-base-300">
-          {keys.map((key) => <div key={key}>{renderInput(`${name}.${index}.${key}`, key)}</div>)}
-          <button type="button" onClick={() => fields.remove(index)}
-            className="btn btn-error btn-sm mt-2">
-            <FaTrash /> Remove {label}
+        <div key={field.id} className="p-4 sm:p-5 rounded-2xl mb-4 bg-white/[0.02] border border-white/5 relative group transition-all hover:bg-white/[0.03]">
+          {keys.map((key) => (
+            <div key={key}>
+              {renderInput(
+                `${name}.${index}.${key}`, 
+                key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+              )}
+            </div>
+          ))}
+          <button 
+            type="button" 
+            onClick={() => fields.remove(index)}
+            className="btn btn-ghost hover:bg-error/10 border border-white/5 hover:border-error/20 hover:text-error btn-xs rounded-xl mt-2 flex items-center gap-1 transition-all"
+          >
+            <FaTrash size={10} /> Remove {label}
           </button>
         </div>
       ))}
-      <button type="button"
+      <button 
+        type="button"
         onClick={() => fields.append(keys.reduce((acc, key) => ({ ...acc, [key]: "" }), {}))}
-        className="btn btn-secondary btn-sm mt-2">
-        <FaPlusCircle /> Add {label}
+        className="btn btn-outline border-primary/20 hover:border-primary hover:bg-primary/10 text-primary hover:text-white btn-sm rounded-xl mt-1 flex items-center gap-1.5 transition-all w-fit"
+      >
+        <FaPlusCircle className="text-xs" /> Add {label}
       </button>
     </div>
   );
 
   // ── Views ──────────────────────────────────────────────────────
-  const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
-  const fadeUp  = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+  const stagger = { 
+    hidden: { opacity: 0 }, 
+    show: { opacity: 1, transition: { staggerChildren: 0.05 } } 
+  };
+  
+  const fadeUp = { 
+    hidden: { opacity: 0, y: 15 }, 
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } } 
+  };
 
   if (showPromptInput) {
     return (
       <motion.div
-        className="mt-5 p-10 flex flex-col gap-3 items-center justify-center font-sans"
-        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
+        className="min-h-[80vh] flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 16 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.35 }}
       >
         <PromptInput onGenerated={(resumeData) => {
           reset(resumeData);
@@ -172,68 +232,134 @@ const GenerateResume = () => {
 
   if (showFormUI) {
     return (
-      <motion.div className="w-full p-10" initial="hidden" animate="show" variants={stagger}>
-        <motion.h1 variants={fadeUp} className="text-4xl font-bold mb-6 flex items-center justify-center gap-2">
-          <BiBook className="text-accent animate-pulse" /> Resume Form
-        </motion.h1>
+      <motion.div 
+        className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8" 
+        initial="hidden" 
+        animate="show" 
+        variants={stagger}
+      >
+        <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+          <div>
+            <span className="text-accent text-xs font-semibold uppercase tracking-wider bg-accent/10 px-3 py-1 rounded-full border border-accent/20">
+              Interactive Editor
+            </span>
+            <h1 className="text-3xl font-extrabold tracking-tight mt-2 text-gradient-glow flex items-center gap-2">
+              <BiBook className="text-accent" /> Complete Your Profile
+            </h1>
+          </div>
 
-        <motion.div variants={fadeUp} className="flex justify-end gap-2 mb-4 flex-wrap">
-          <button onClick={handleExport} className="btn btn-sm btn-outline btn-info gap-1">
-            <FaFileDownload /> Export JSON
-          </button>
-          <button onClick={() => fileInputRef.current.click()} className="btn btn-sm btn-outline btn-success gap-1">
-            <FaFileUpload /> Import JSON
-          </button>
-          <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} />
+          <div className="flex gap-2">
+            <button 
+              onClick={handleExport} 
+              className="btn btn-outline border-info/30 hover:border-info hover:bg-info/10 text-info hover:text-white rounded-xl btn-sm h-10 px-4 transition-all"
+            >
+              <FaFileDownload className="mr-1.5 text-xs" /> Export JSON
+            </button>
+            <button 
+              onClick={() => fileInputRef.current.click()} 
+              className="btn btn-outline border-success/30 hover:border-success hover:bg-success/10 text-success hover:text-white rounded-xl btn-sm h-10 px-4 transition-all"
+            >
+              <FaFileUpload className="mr-1.5 text-xs" /> Import JSON
+            </button>
+            <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleImport} />
+          </div>
         </motion.div>
 
-        <motion.form variants={fadeUp} onSubmit={handleSubmit(onSubmit)}
-          className="p-6 space-y-6 bg-base-200 rounded-lg text-base-content shadow-lg">
-          <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderInput("personalInformation.fullName", "Full Name")}
-            {renderInput("personalInformation.email", "Email", "email")}
-            {renderInput("personalInformation.phoneNumber", "Phone Number", "tel")}
-            {renderInput("personalInformation.location", "Location")}
-            {renderInput("personalInformation.linkedin", "LinkedIn", "url")}
-            {renderInput("personalInformation.gitHub", "GitHub", "url")}
-            {renderInput("personalInformation.portfolio", "Portfolio", "url")}
-          </motion.div>
+        <motion.form 
+          variants={fadeUp} 
+          onSubmit={handleSubmit(onSubmit)}
+          className="glass-panel p-6 sm:p-8 rounded-3xl text-slate-200 shadow-2xl space-y-6"
+        >
+          {/* Personal Info Grid */}
+          <div>
+            <h3 className="text-lg font-bold mb-4 text-slate-100 border-b border-white/5 pb-2">
+              Personal Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+              {renderInput("personalInformation.fullName", "Full Name")}
+              {renderInput("personalInformation.email", "Email", "email")}
+              {renderInput("personalInformation.phoneNumber", "Phone Number", "tel")}
+              {renderInput("personalInformation.location", "Location")}
+              {renderInput("personalInformation.linkedin", "LinkedIn URL", "url")}
+              {renderInput("personalInformation.gitHub", "GitHub URL", "url")}
+              {renderInput("personalInformation.portfolio", "Portfolio URL", "url")}
+            </div>
+          </div>
 
-          <motion.h3 variants={fadeUp} className="text-xl font-semibold">Summary</motion.h3>
-          <textarea {...register("summary")}
-            className="textarea textarea-bordered w-full bg-base-100 resize-none focus:ring-2 focus:ring-primary" rows={4} />
+          {/* Professional Summary */}
+          <div>
+            <h3 className="text-lg font-bold mb-2 text-slate-100">Professional Summary</h3>
+            <textarea 
+              {...register("summary")}
+              className="textarea w-full p-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:border-primary/50 focus:outline-none text-sm resize-none transition-all leading-relaxed" 
+              rows={4} 
+              placeholder="Write a brief professional summary describing your core value proposition..."
+            />
+          </div>
 
+          {/* Core Skills FieldArray */}
           {renderFieldArray(skillsFields, "Skills", "skills", ["title", "level"])}
-          {renderFieldArray(experienceFields, "Experience", "experience",
+          
+          {/* Experience FieldArray */}
+          {renderFieldArray(experienceFields, "Work Experience", "experience",
             ["jobTitle", "company", "location", "duration", "responsibility"])}
+          
+          {/* Education FieldArray */}
           {renderFieldArray(educationFields, "Education", "education",
             ["degree", "university", "location", "graduationYear"])}
+          
+          {/* Certifications FieldArray */}
           {renderFieldArray(certificationsFields, "Certifications", "certifications",
             ["title", "issuingOrganization", "year"])}
 
-          {/* GitHub import */}
-          <div className="flex items-end gap-2 p-4 bg-base-100 rounded-lg border border-base-300">
-            <div className="form-control w-full max-w-xs">
-              <label className="label">
-                <span className="label-text font-bold flex items-center gap-2"><FaGithub /> GitHub Projects</span>
+          {/* GitHub Repository Import */}
+          <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col sm:flex-row items-end gap-4">
+            <div className="form-control w-full sm:max-w-xs">
+              <label className="label py-1">
+                <span className="label-text text-slate-300 font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                  <FaGithub className="text-base text-slate-400" /> Auto-import GitHub Projects
+                </span>
               </label>
-              <input type="text" placeholder="GitHub Username" className="input input-bordered w-full h-10"
-                value={githubUsername} onChange={(e) => setGithubUsername(e.target.value)} />
+              <input 
+                type="text" 
+                placeholder="Username" 
+                className="input rounded-xl w-full bg-white/5 border border-white/10 text-white focus:border-primary/50 focus:outline-none transition-all h-10 px-4 text-sm"
+                value={githubUsername} 
+                onChange={(e) => setGithubUsername(e.target.value)} 
+              />
             </div>
-            <button type="button" onClick={handleGithubImport} className="btn btn-accent btn-sm h-10">
-              Fetch Projects
+            <button 
+              type="button" 
+              onClick={handleGithubImport} 
+              className="btn bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-slate-200 rounded-xl h-10 px-4 text-xs font-semibold w-full sm:w-auto"
+            >
+              Sync repositories
             </button>
           </div>
 
+          {/* Projects FieldArray */}
           {renderFieldArray(projectsFields, "Projects", "projects",
             ["title", "description", "technologiesUsed", "githubLink"])}
 
-          <div className="flex gap-3 mt-4 p-4 rounded-xl">
-            <div className="flex-1">{renderFieldArray(languagesFields, "Languages", "languages", ["name"])}</div>
-            <div className="flex-1">{renderFieldArray(interestsFields, "Interests", "interests", ["name"])}</div>
+          {/* Languages & Interests Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              {renderFieldArray(languagesFields, "Languages", "languages", ["name"])}
+            </div>
+            <div>
+              {renderFieldArray(interestsFields, "Interests", "interests", ["name"])}
+            </div>
           </div>
 
-          <motion.button variants={fadeUp} type="submit" className="btn btn-primary w-full text-lg">Submit & Preview</motion.button>
+          {/* Form Action */}
+          <div className="pt-4 border-t border-white/5">
+            <button 
+              type="submit" 
+              className="btn btn-theme-inverse hover:scale-[1.02] active:scale-[0.98] transition-all rounded-2xl w-full h-12 text-sm font-semibold"
+            >
+              Preview & Compile Resume
+            </button>
+          </div>
         </motion.form>
       </motion.div>
     );
@@ -241,43 +367,93 @@ const GenerateResume = () => {
 
   if (showResumeUI) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
-        {/* Template picker */}
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8"
+      >
+        {/* Template Picker Headers */}
         <motion.div
-          className="flex justify-center gap-4 mb-8 bg-base-200 p-4 rounded-xl shadow-inner"
-          initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+          className="flex justify-center items-center gap-2 mb-8 bg-white/[0.02] border border-white/5 p-2 rounded-2xl shadow-inner max-w-md mx-auto"
+          initial={{ opacity: 0, y: -12 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3 }}
         >
           {["modern", "classic", "creative"].map((t) => (
-            <button key={t} onClick={() => setSelectedTemplate(t)}
-              className={`btn btn-sm capitalize ${selectedTemplate === t ? "btn-primary" : "btn-ghost"}`}>
+            <button 
+              key={t} 
+              onClick={() => setSelectedTemplate(t)}
+              className={`btn btn-sm flex-1 capitalize rounded-xl h-9 border-none transition-all ${
+                selectedTemplate === t 
+                  ? "bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/10" 
+                  : "bg-transparent text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
               {t}
             </button>
           ))}
         </motion.div>
 
-        <Resume data={data} templateId={selectedTemplate} />
+        {/* The Live Rendered Resume component */}
+        <div className="rounded-3xl overflow-hidden shadow-2xl border border-white/5 mb-8">
+          <Resume data={data} templateId={selectedTemplate} />
+        </div>
 
-        {/* Action bar */}
+        {/* Action controls bar */}
         <motion.div
-          className="flex mt-5 justify-center gap-2 flex-wrap"
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}
+          className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/[0.02] border border-white/5 p-6 rounded-3xl"
+          initial={{ opacity: 0, y: 12 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.15 }}
         >
-          <button onClick={() => { setShowPromptInput(true); setShowFormUI(false); setShowResumeUI(false); }}
-            className="btn btn-accent">Generate Another</button>
-          <button onClick={() => { setShowPromptInput(false); setShowFormUI(true); setShowResumeUI(false); }}
-            className="btn btn-success">Edit</button>
-          <button onClick={() => document.getElementById("ai_modal").showModal()}
-            className="btn btn-secondary"><FaMagic /> AI Tools</button>
-          <button onClick={() => document.getElementById("cl_modal").showModal()}
-            className="btn btn-info">✍️ Writing Tools</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button 
+              onClick={() => { setShowPromptInput(true); setShowFormUI(false); setShowResumeUI(false); }}
+              className="btn bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 rounded-2xl h-11 px-4 text-xs font-semibold transition-all"
+            >
+              Start New Build
+            </button>
+            <button 
+              onClick={() => { setShowPromptInput(false); setShowFormUI(true); setShowResumeUI(false); }}
+              className="btn btn-outline border-secondary/20 hover:border-secondary hover:bg-secondary/10 text-secondary hover:text-white rounded-2xl h-11 px-5 text-xs font-semibold transition-all"
+            >
+              Edit Content
+            </button>
+            <button 
+              onClick={() => document.getElementById("ai_modal").showModal()}
+              className="btn btn-theme-inverse rounded-2xl h-11 px-5 text-xs font-semibold flex items-center gap-1.5 transition-all"
+            >
+              <FaMagic /> AI Tools
+            </button>
+            <button 
+              onClick={() => document.getElementById("cl_modal").showModal()}
+              className="btn bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 rounded-2xl h-11 px-4 text-xs font-semibold flex items-center gap-1.5 transition-all"
+            >
+              ✍️ Cover Letter
+            </button>
+          </div>
 
-          {/* Save to account */}
+          {/* Account Save form */}
           {isLoggedIn() && (
-            <div className="flex gap-1">
-              <input type="text" placeholder="Resume title..." className="input input-bordered input-sm"
-                value={saveTitle} onChange={(e) => setSaveTitle(e.target.value)} />
-              <button onClick={handleSaveResume} disabled={savingResume} className="btn btn-warning btn-sm gap-1">
-                {savingResume ? <span className="loading loading-spinner loading-xs" /> : <FaSave />} Save
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input 
+                type="text" 
+                placeholder="Document Title (e.g. Resume v1)" 
+                className="input rounded-xl bg-white/5 border border-white/10 text-white focus:border-primary/50 focus:outline-none transition-all h-11 px-4 text-xs flex-1 sm:w-48"
+                value={saveTitle} 
+                onChange={(e) => setSaveTitle(e.target.value)} 
+              />
+              <button 
+                onClick={handleSaveResume} 
+                disabled={savingResume} 
+                className="btn bg-warning hover:bg-warning/95 text-slate-900 border-none rounded-2xl h-11 px-4 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-warning/10"
+              >
+                {savingResume ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <FaSave />
+                )}
+                Save Workspace
               </button>
             </div>
           )}
@@ -285,7 +461,7 @@ const GenerateResume = () => {
 
         <AtsCheckerModal resumeData={data} />
         <CoverLetterModal resumeData={data} />
-        <div className="mt-4 max-w-sm">
+        <div className="mt-8 max-w-sm">
           <FeedbackWidget endpointType="GENERATE" aiResponseSnippet={JSON.stringify(data).slice(0, 500)} compact />
         </div>
       </motion.div>

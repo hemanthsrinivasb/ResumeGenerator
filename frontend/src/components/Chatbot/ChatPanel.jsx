@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { RiRobot2Fill, RiSendPlaneFill } from "react-icons/ri";
 import { IoClose, IoTrash } from "react-icons/io5";
+import { useLocation } from "react-router";
 import useChatStore from "../../store/chatStore";
 import ChatMessageBubble from "./ChatMessageBubble";
 import { streamMessage, clearChatHistory, getChatHistory } from "../../api/ChatService";
@@ -22,7 +23,10 @@ export default function ChatPanel() {
     isOpen, closeChat, messages, streamingContent,
     sessionId, isTyping, setTyping,
     addMessage, appendStreamToken, finalizeStream, clearHistory,
+    loadHistory,
   } = useChatStore();
+
+  const location = useLocation();
 
   const [input, setInput] = useState("");
   const [stopStream, setStopStream] = useState(null);
@@ -39,6 +43,21 @@ export default function ChatPanel() {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 300);
   }, [isOpen]);
 
+  // Load chat history when the panel opens
+  useEffect(() => {
+    if (isOpen) {
+      getChatHistory(sessionId)
+        .then((history) => {
+          if (history) {
+            loadHistory(history);
+          }
+        })
+        .catch((err) => {
+          console.warn("Failed to load chat history", err);
+        });
+    }
+  }, [isOpen, sessionId, loadHistory]);
+
   const handleSend = (text) => {
     const msg = (text || input).trim();
     if (!msg || isTyping) return;
@@ -50,11 +69,13 @@ export default function ChatPanel() {
     const stop = streamMessage(
       msg,
       sessionId,
+      location.pathname,
       (token) => appendStreamToken(token),
       () => finalizeStream(),
       (err) => {
         console.error("Stream error:", err);
         finalizeStream();
+        addMessage("assistant", "Model Error");
       }
     );
     setStopStream(() => stop);
@@ -95,7 +116,6 @@ export default function ChatPanel() {
               <RiRobot2Fill size={20} />
               <div>
                 <p className="font-semibold text-sm leading-tight">AI Career Coach</p>
-                <p className="text-xs text-violet-200">Powered by DeepSeek-r1 + RAG</p>
               </div>
             </div>
             <div className="flex gap-2">

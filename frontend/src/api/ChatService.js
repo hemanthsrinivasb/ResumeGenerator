@@ -1,15 +1,21 @@
 import axios from "axios";
-import { getToken } from "./ResumeService";
+import { getToken, getApiKeysHeaders } from "./ResumeService";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8050";
 
-const authHeader = () => ({ Authorization: `Bearer ${getToken()}` });
+const authHeader = () => {
+  const token = getToken();
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...getApiKeysHeaders(),
+  };
+};
 
 /** Non-streaming: send a single message and await the full response. */
-export const sendMessage = async (message, sessionId) => {
+export const sendMessage = async (message, sessionId, pageUrl) => {
   const res = await axios.post(
     `${BASE_URL}/api/v1/chat/message`,
-    { message, sessionId },
+    { message, sessionId, pageUrl: pageUrl || "" },
     { headers: authHeader() }
   );
   return res.data; // { response, sessionId }
@@ -20,16 +26,22 @@ export const sendMessage = async (message, sessionId) => {
  * Calls onToken(token) for each chunk, onDone() when complete, onError(err) on failure.
  * Returns a close() function to abort the stream.
  */
-export const streamMessage = (message, sessionId, onToken, onDone, onError) => {
+export const streamMessage = (message, sessionId, pageUrl, onToken, onDone, onError) => {
   const token = getToken();
-  const params = new URLSearchParams({ message, sessionId });
+  const params = new URLSearchParams({ message, sessionId, pageUrl: pageUrl || "" });
   const url = `${BASE_URL}/api/v1/chat/stream?${params}`;
 
   // EventSource doesn't support custom headers — use fetch-based SSE instead
   const controller = new AbortController();
+  const headers = {
+    ...getApiKeysHeaders(),
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
     signal: controller.signal,
   })
     .then(async (response) => {

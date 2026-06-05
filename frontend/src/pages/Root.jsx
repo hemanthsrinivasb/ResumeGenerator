@@ -1,17 +1,15 @@
 import React from "react";
 import { Outlet } from "react-router";
 import Navbar from "../components/Navbar";
-import ChatbotButton from "../components/Chatbot/ChatbotButton";
-import ChatPanel from "../components/Chatbot/ChatPanel";
 
 function Root() {
   return (
-    <div>
+    <div className="relative min-h-screen">
+      <div className="bg-mesh" />
       <Navbar />
-      <Outlet />
-      {/* Floating AI Career Coach — visible to logged-in users on all pages */}
-      <ChatbotButton />
-      <ChatPanel />
+      <main className="py-6">
+        <Outlet />
+      </main>
     </div>
   );
 }

@@ -1,14 +1,12 @@
 import { motion } from "framer-motion";
 import { RiRobot2Fill } from "react-icons/ri";
 import useChatStore from "../../store/chatStore";
-import { isLoggedIn } from "../../api/ResumeService";
+
 
 export default function ChatbotButton() {
   const { isOpen, toggleChat, messages } = useChatStore();
   const unread = messages.filter((m) => m.role === "assistant").length;
 
-  // Only show for logged-in users
-  if (!isLoggedIn()) return null;
 
   return (
     <motion.button
