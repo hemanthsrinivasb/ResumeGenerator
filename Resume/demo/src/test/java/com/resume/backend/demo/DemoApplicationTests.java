@@ -21,7 +21,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = {
-		"spring.ai.openai.api-key=mock-key"
+		"spring.ai.openai.api-key=mock-key",
+		"spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.datasource.username=sa",
+		"spring.datasource.password=",
+		"spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+		"app.rag.enabled=false"
 })
 class DemoApplicationTests {
 
