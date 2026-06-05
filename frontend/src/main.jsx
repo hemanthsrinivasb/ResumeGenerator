@@ -26,6 +26,8 @@ import MarketIntel         from "./pages/MarketIntel";
 import AIHealth            from "./pages/AIHealth";
 
 import { isLoggedIn } from "./api/ResumeService";
+import ChatbotButton from "./components/Chatbot/ChatbotButton";
+import ChatPanel from "./components/Chatbot/ChatPanel";
 
 // Redirect logged-in users away from login/register
 const GuestRoute = ({ children }) =>
@@ -39,11 +41,12 @@ createRoot(document.getElementById("root")).render(
         {/* Auth pages — no navbar wrapper */}
         <Route path="/login"    element={<GuestRoute><Login /></GuestRoute>} />
         <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
-        <Route path="/dashboard" element={<Dashboard />} />
 
         {/* Main app with Navbar */}
         <Route path="/" element={<Root />}>
-          <Route index           element={<Home />} />
+          <Route index           element={<Navigate to="/login" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="home"     element={<Home />} />
           <Route path="about"    element={<About />} />
           <Route path="services" element={<Services />} />
           <Route path="contact"  element={<Contact />} />
@@ -61,6 +64,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="ai-health"       element={<AIHealth />} />
         </Route>
       </Routes>
+      <ChatbotButton />
+      <ChatPanel />
     </BrowserRouter>
   </StrictMode>
 );

@@ -28,7 +28,7 @@ const Services = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Service 1 */}
             <div className="card bg-base-200 shadow-xl transition hover:scale-105 duration-300">
-              <div className="card-body text-center">
+              <div className="card-body items-center text-center">
                 <div className="text-4xl mb-4">🧠</div>
                 <h3 className="card-title text-2xl font-semibold">AI Resume Builder</h3>
                 <p className="text-gray-600">
@@ -38,7 +38,7 @@ const Services = () => {
             </div>
             {/* Service 2 */}
             <div className="card bg-base-200 shadow-xl transition hover:scale-105 duration-300">
-              <div className="card-body text-center">
+              <div className="card-body items-center text-center">
                 <div className="text-4xl mb-4">🎨</div>
                 <h3 className="card-title text-2xl font-semibold">Customizable Templates</h3>
                 <p className="text-gray-600">
@@ -48,7 +48,7 @@ const Services = () => {
             </div>
             {/* Service 3 */}
             <div className="card bg-base-200 shadow-xl transition hover:scale-105 duration-300">
-              <div className="card-body text-center">
+              <div className="card-body items-center text-center">
                 <div className="text-4xl mb-4">📌</div>
                 <h3 className="card-title text-2xl font-semibold">Job-Specific Tailoring</h3>
                 <p className="text-gray-600">
@@ -58,7 +58,7 @@ const Services = () => {
             </div>
             {/* Service 4 */}
             <div className="card bg-base-200 shadow-xl transition hover:scale-105 duration-300">
-              <div className="card-body text-center">
+              <div className="card-body items-center text-center">
                 <div className="text-4xl mb-4">📝</div>
                 <h3 className="card-title text-2xl font-semibold">Live Resume Editor</h3>
                 <p className="text-gray-600">
@@ -68,7 +68,7 @@ const Services = () => {
             </div>
             {/* Service 5 */}
             <div className="card bg-base-200 shadow-xl transition hover:scale-105 duration-300">
-              <div className="card-body text-center">
+              <div className="card-body items-center text-center">
                 <div className="text-4xl mb-4">🔍</div>
                 <h3 className="card-title text-2xl font-semibold">ATS Optimization</h3>
                 <p className="text-gray-600">
@@ -78,7 +78,7 @@ const Services = () => {
             </div>
             {/* Service 6 */}
             <div className="card bg-base-200 shadow-xl transition hover:scale-105 duration-300">
-              <div className="card-body text-center">
+              <div className="card-body items-center text-center">
                 <div className="text-4xl mb-4">📥</div>
                 <h3 className="card-title text-2xl font-semibold">Export & Download</h3>
                 <p className="text-gray-600">
@@ -101,7 +101,7 @@ const Services = () => {
           </p>
           <Link
             to="/generate-resume"
-            className="btn btn-primary transition transform hover:scale-105"
+            className="btn btn-theme-inverse hover:scale-105 active:scale-95 px-8 h-12"
           >
             Start Now
           </Link>

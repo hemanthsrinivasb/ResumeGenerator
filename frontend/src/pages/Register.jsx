@@ -3,11 +3,13 @@ import { useNavigate, Link } from "react-router";
 import toast from "react-hot-toast";
 import { FaBrain, FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import { registerUser } from "../api/ResumeService";
+import ApiKeysModal from "../components/ApiKeysModal";
 
 const Register = () => {
   const navigate = useNavigate();
   const [form, setForm]       = useState({ name: "", email: "", password: "", confirm: "" });
   const [loading, setLoading] = useState(false);
+  const [showKeysModal, setShowKeysModal] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -24,7 +26,7 @@ const Register = () => {
       localStorage.setItem("jwt_token", data.token);
       localStorage.setItem("auth_user", JSON.stringify({ name: data.name, email: data.email }));
       toast.success("Account created! 🎉");
-      navigate("/dashboard");
+      setShowKeysModal(true);
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {
@@ -33,8 +35,10 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-2xl">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+      <div className="bg-mesh" />
+      <div className="bg-grid absolute inset-0 -z-10" />
+      <div className="card w-full max-w-md glass-panel card-glow shadow-2xl">
         <div className="card-body">
           <div className="flex items-center justify-center gap-2 mb-4">
             <FaBrain className="text-primary text-3xl" />
@@ -97,6 +101,18 @@ const Register = () => {
           </p>
         </div>
       </div>
+      <ApiKeysModal
+        isOpen={showKeysModal}
+        onClose={() => {
+          setShowKeysModal(false);
+          navigate("/dashboard");
+        }}
+        onSuccess={() => {
+          setShowKeysModal(false);
+          navigate("/dashboard");
+        }}
+        isSignUp={true}
+      />
     </div>
   );
 };

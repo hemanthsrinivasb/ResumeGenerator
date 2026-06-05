@@ -27,8 +27,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-2xl">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+      <div className="bg-mesh" />
+      <div className="bg-grid absolute inset-0 -z-10" />
+      <div className="card w-full max-w-md glass-panel card-glow shadow-2xl">
         <div className="card-body">
           <div className="flex items-center justify-center gap-2 mb-4">
             <FaBrain className="text-primary text-3xl" />

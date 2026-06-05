@@ -1,6 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { analyzeResume, generateSkillsGap, generateInterviewQuestions } from "../api/ResumeService";
+import ApiErrorModal from "./ApiErrorModal";
 
 const AtsCheckerModal = ({ resumeData }) => {
   const [jobDescription, setJobDescription] = useState("");
@@ -9,15 +10,22 @@ const AtsCheckerModal = ({ resumeData }) => {
   const [skillsGap, setSkillsGap]           = useState(null);
   const [questions, setQuestions]           = useState(null);
   const [loading, setLoading]               = useState(false);
+  const [apiError, setApiError]             = useState(null);
 
   const run = async (fn, setter) => {
     if (!jobDescription.trim()) { toast.error("Please enter a Job Description"); return; }
     setLoading(true);
     try {
       const res = await fn(resumeData, jobDescription);
-      setter(res.data);
-    } catch {
-      toast.error("AI request failed. Is Ollama running?");
+      if (res.error) {
+        setApiError(res.error);
+      } else if (!res.data) {
+        setApiError("Backend succeeded but returned empty results.");
+      } else {
+        setter(res.data);
+      }
+    } catch (err) {
+      setApiError(err);
     } finally {
       setLoading(false);
     }
@@ -162,6 +170,11 @@ const AtsCheckerModal = ({ resumeData }) => {
           <form method="dialog"><button className="btn">Close</button></form>
         </div>
       </div>
+      <ApiErrorModal
+        isOpen={!!apiError}
+        onClose={() => setApiError(null)}
+        error={apiError}
+      />
     </dialog>
   );
 };

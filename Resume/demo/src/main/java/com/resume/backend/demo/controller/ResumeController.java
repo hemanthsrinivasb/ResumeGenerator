@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.RequestAttributes;
 
 @Slf4j
 @RestController
@@ -106,8 +108,10 @@ public class ResumeController {
     @Operation(summary = "Stream resume generation token-by-token via Server-Sent Events")
     public SseEmitter streamResumeGeneration(@RequestBody Resumerequest request) {
         SseEmitter emitter = new SseEmitter(120_000L);
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
 
         CompletableFuture.runAsync(() -> {
+            RequestContextHolder.setRequestAttributes(requestAttributes);
             try {
                 String promptContent = resumeService.buildResumePrompt(request.userDescription());
                 Prompt prompt = new Prompt(promptContent);
@@ -139,6 +143,8 @@ public class ResumeController {
             } catch (Exception e) {
                 log.error("SSE setup error: {}", e.getMessage());
                 emitter.completeWithError(e);
+            } finally {
+                RequestContextHolder.resetRequestAttributes();
             }
         });
 

@@ -15,6 +15,14 @@ const useChatStore = create((set, get) => ({
   // Currently streaming token buffer
   streamingContent: "",
 
+  // Active Resume Integration
+  activeResume: null,
+  setActiveResume: (resume) => set({ activeResume: resume }),
+  updateResumeCallback: null,
+  setUpdateResumeCallback: (cb) => set({ updateResumeCallback: cb }),
+  pendingResume: null,
+  setPendingResume: (resume) => set({ pendingResume: resume }),
+
   // Actions
   toggleChat: () => set((s) => ({ isOpen: !s.isOpen })),
   openChat: () => set({ isOpen: true }),

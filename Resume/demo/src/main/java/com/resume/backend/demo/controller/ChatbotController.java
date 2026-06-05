@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.RequestAttributes;
 
 @RestController
 @RequestMapping("/api/v1/chat")
@@ -38,12 +40,14 @@ public class ChatbotController {
 
         String message = body.getOrDefault("message", "").trim();
         String sessionId = body.getOrDefault("sessionId", "default");
+        String pageUrl = body.getOrDefault("pageUrl", "");
 
         if (message.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Message cannot be empty"));
         }
 
-        String response = chatbotService.chat(message, user.getId(), sessionId);
+        Long userId = (user != null) ? user.getId() : 0L;
+        String response = chatbotService.chat(message, userId, sessionId, pageUrl);
         return ResponseEntity.ok(Map.of("response", response, "sessionId", sessionId));
     }
 
@@ -53,16 +57,28 @@ public class ChatbotController {
     public SseEmitter streamMessage(
             @RequestParam String message,
             @RequestParam(defaultValue = "default") String sessionId,
+            @RequestParam(required = false, defaultValue = "") String pageUrl,
             @AuthenticationPrincipal User user) {
 
         SseEmitter emitter = new SseEmitter(120_000L);
+        Long userId = (user != null) ? user.getId() : 0L;
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
 
-        CompletableFuture.runAsync(() ->
+        CompletableFuture.runAsync(() -> {
+            RequestContextHolder.setRequestAttributes(requestAttributes);
+            try {
                 chatbotService.streamChat(
                         message,
-                        user.getId(),
+                        userId,
                         sessionId,
-                        token -> emitter.send(SseEmitter.event().name("token").data(token)),
+                        pageUrl,
+                        token -> {
+                            try {
+                                emitter.send(SseEmitter.event().name("token").data(token));
+                            } catch (IOException e) {
+                                log.error("Error sending token: {}", e.getMessage());
+                            }
+                        },
                         () -> {
                             try {
                                 emitter.send(SseEmitter.event().name("done").data("[DONE]"));
@@ -72,8 +88,11 @@ public class ChatbotController {
                             }
                         },
                         emitter::completeWithError
-                )
-        );
+                );
+            } finally {
+                RequestContextHolder.resetRequestAttributes();
+            }
+        });
 
         return emitter;
     }
@@ -85,7 +104,8 @@ public class ChatbotController {
             @PathVariable String sessionId,
             @AuthenticationPrincipal User user) {
 
-        List<Map<String, Object>> history = chatbotService.getHistory(user.getId(), sessionId)
+        Long userId = (user != null) ? user.getId() : 0L;
+        List<Map<String, Object>> history = chatbotService.getHistory(userId, sessionId)
                 .stream()
                 .map(m -> Map.<String, Object>of(
                         "id", m.getId(),
@@ -105,7 +125,8 @@ public class ChatbotController {
             @PathVariable String sessionId,
             @AuthenticationPrincipal User user) {
 
-        chatbotService.clearHistory(user.getId(), sessionId);
+        Long userId = (user != null) ? user.getId() : 0L;
+        chatbotService.clearHistory(userId, sessionId);
         return ResponseEntity.noContent().build();
     }
 }
