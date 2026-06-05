@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const baseURLL = "http://localhost:8050";
+export const baseURLL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8050";
 
 // ── Auth helpers ───────────────────────────────────────────────────
 export const getToken = () => localStorage.getItem("jwt_token");
